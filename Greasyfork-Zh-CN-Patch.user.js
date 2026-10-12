@@ -3,7 +3,7 @@
 // @name:zh-CN   Greasyfork 中文化补充
 // @name:en      Greasyfork Chinese Translation Supplement
 // @namespace    https://github.com/saiyajiang/Greasyfork-Zh-CN-Patch
-// @version      1.0.0
+// @version      1.1.0
 // @description  补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案。本脚本由 AI 编写，译文仅供参考。
 // @description:en  Fills in untranslated English UI strings on Greasyfork / Sleazyfork. Written by AI.
@@ -388,6 +388,109 @@
       ['Characters remaining', '剩余字符数'],
       ['and', '和'],
       ['or', '或']
+    ],
+
+    '脚本集与 Webhook': [
+      ['Webhooks', 'Webhook'],
+      ['Webhook', 'Webhook'],
+      ['New webhook', '新建 Webhook'],
+      ['Add webhook', '添加 Webhook'],
+      ['Edit webhook', '编辑 Webhook'],
+      ['Payload URL', '回调地址'],
+      ['Content type', '内容类型'],
+      ['Secret', '密钥'],
+      ['Secret Token', '密钥令牌'],
+      ['Which events would you like to trigger this webhook?', '希望哪些事件触发此 Webhook？'],
+      ['Which events would you like to use?', '希望使用哪些事件？'],
+      ['Triggers', '触发器'],
+      ['Trigger', '触发器'],
+      ['Repository push', '仓库推送'],
+      ['Skip certificate verification', '跳过证书验证'],
+      ['Enable SSL Verification', '启用 SSL 验证'],
+      ['Enable request history collection', '启用请求历史收集'],
+      ['Enable SSL verification', '启用 SSL 验证'],
+      ['Events', '事件'],
+      ['Active', '启用中'],
+      ['Inactive', '已停用'],
+      ['Deliveries', '投递记录'],
+      ['Recent deliveries', '最近投递'],
+      ['Request history', '请求历史'],
+      ['Sync', '同步'],
+      ['Sync now', '立即同步'],
+      ['Last synced', '上次同步'],
+      ['Auto-update', '自动更新'],
+      ['Automatic updates', '自动更新'],
+      ['Help us translate!', '帮助我们翻译！'],
+      ['Help translate', '帮助翻译']
+    ],
+
+    /* 整句：完整句子不受「仅 UI 元素」限制，靠整体精确匹配保证安全。
+       导出的候选里若有长句，放这里并给出完整译文。 */
+    '整句': [
+      ['To update Greasy Fork on all pushes, choose "Push events".',
+       '若要在每次推送时更新 Greasy Fork，请选择“推送事件”。'],
+      ['Enable SSL Verification, then enter the data below:',
+       '启用 SSL 验证，然后填写以下信息：'],
+      ['Enter the data below:', '填写以下信息：'],
+      ['This will replace the existing version.', '此操作将覆盖现有版本。'],
+      ['You have unsaved changes.', '有未保存的更改。']
+    ],
+
+    '语言名称': [
+      ['English (en)', '英语（en）'],
+      ['Chinese (zh-CN)', '简体中文（zh-CN）'],
+      ['Chinese (zh-TW)', '繁体中文（zh-TW）'],
+      ['Japanese (ja)', '日语（ja）'],
+      ['Korean (ko)', '韩语（ko）'],
+      ['German (de)', '德语（de）'],
+      ['French (fr)', '法语（fr）'],
+      ['Spanish (es)', '西班牙语（es）'],
+      ['Portuguese (pt-BR)', '葡萄牙语（巴西）（pt-BR）'],
+      ['Russian (ru)', '俄语（ru）'],
+      ['Italian (it)', '意大利语（it）'],
+      ['Dutch (nl)', '荷兰语（nl）'],
+      ['Polish (pl)', '波兰语（pl）'],
+      ['Turkish (tr)', '土耳其语（tr）'],
+      ['Vietnamese (vi)', '越南语（vi）'],
+      ['Filipino (fil)', '菲律宾语（fil）'],
+      ['Indonesian (id)', '印尼语（id）'],
+      ['Thai (th)', '泰语（th）'],
+      ['Arabic (ar)', '阿拉伯语（ar）'],
+      ['Hebrew (he)', '希伯来语（he）'],
+      ['Hindi (hi)', '印地语（hi）'],
+      ['Ukrainian (uk)', '乌克兰语（uk）'],
+      ['Czech (cs)', '捷克语（cs）'],
+      ['Swedish (sv)', '瑞典语（sv）'],
+      ['Danish (da)', '丹麦语（da）'],
+      ['Finnish (fi)', '芬兰语（fi）'],
+      ['Norwegian (no)', '挪威语（no）'],
+      ['Greek (el)', '希腊语（el）'],
+      ['Romanian (ro)', '罗马尼亚语（ro）'],
+      ['Hungarian (hu)', '匈牙利语（hu）']
+    ],
+
+    /* 专有名词 / 占位符：明确不翻译，仅用于导出时过滤噪声 */
+    '不翻译（白名单）': [
+      ['Greasy Fork', null],
+      ['Greasy Fork+', null],
+      ['Greasyfork', null],
+      ['Sleazy Fork', null],
+      ['Sleazyfork', null],
+      ['GitHub', null],
+      ['GitLab', null],
+      ['Bitbucket', null],
+      ['Codeberg', null],
+      ['master', null],
+      ['main', null],
+      ['Tampermonkey', null],
+      ['Violentmonkey', null],
+      ['Greasemonkey', null],
+      ['OpenUserJS', null],
+      ['YourRepoName', null],
+      ['YourProjectName', null],
+      ['YourBranchName', null],
+      ['YourNumericalProjectID', null],
+      ['YourUserName', null]
     ]
   };
 
@@ -425,7 +528,12 @@
     ['Report this script', '举报此脚本'],
     ['Posted by', '发布者'],
     ['Updated at', '更新于'],
-    ['Created at', '创建于']
+    ['Created at', '创建于'],
+    ['then enter the data below', '然后填写以下信息'],
+    ['Push events', '推送事件'],
+    ['Release events', '发布事件'],
+    ['Enable SSL verification', '启用 SSL 验证'],
+    ['Help us translate', '帮助我们翻译']
   ];
 
   /* 正则规则：处理带数字 / 变量的文案 */
@@ -457,10 +565,16 @@
 
   /* ============================ 基础设施 ============================ */
 
+  /* 译文中为 null 的词条属于「白名单」：不参与替换，仅用于导出时过滤噪声 */
   const EXACT = new Map();
+  const SKIP_WORDS = new Set();
   Object.keys(DICT_GROUPS).forEach(function (group) {
     DICT_GROUPS[group].forEach(function (pair) {
       const key = String(pair[0]).toLowerCase();
+      if (pair[1] === null) {
+        SKIP_WORDS.add(key);
+        return;
+      }
       if (!EXACT.has(key)) EXACT.set(key, pair[1]);
     });
   });
@@ -743,8 +857,25 @@
 
   const NOISE_RE = /(https?:\/\/|\.(js|css|json|png|jpg|svg|html)\b|[\{\}<>=;\\\/@#]|^[A-Z0-9_.-]{1,4}$|[\u4e00-\u9fff\u3040-\u30ff])/i;
 
+  /* 占位符 / 变量名：YourRepoName、YourNumericalProjectID 这类大驼峰连写 */
+  const PLACEHOLDER_RE = /^(?:[A-Z][a-z\d]+){2,}$/;
+  /* 单个无空格小写标识符：多为用户名、仓库名（saiyajiang 等） */
+  const IDENTIFIER_RE = /^[a-z][a-z\d._-]{3,}$/;
+  /* 被 HTML 标签切断的句子残片：(only for release events, where */
+  const FRAGMENT_RE = /^[\(,;.]|[\),;.]$/;
+
+  function classify(t) {
+    const low = t.toLowerCase();
+    if (SKIP_WORDS.has(low)) return 'skip';
+    if (PLACEHOLDER_RE.test(t)) return 'skip';
+    if (FRAGMENT_RE.test(t.trim())) return 'skip';
+    if (IDENTIFIER_RE.test(t)) return 'skip';
+    return 'todo';
+  }
+
   function collectUntranslated() {
-    const found = new Map();
+    const todo = new Map();
+    const skipped = new Map();
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
     let node = walker.nextNode();
     while (node) {
@@ -756,22 +887,47 @@
           const hasWord = t.split(/\s+/).some(function (w) {
             return /^[A-Za-z][A-Za-z'’-]{1,}$/.test(w) && w.length > 2;
           });
-          if (hasWord && !lookupExact(t) && !applyPhrases(t)) {
-            found.set(t, (found.get(t) || 0) + 1);
+          // 用与替换逻辑完全一致的方式判断「是否已覆盖」，
+          // 否则含已知短语、但不在 UI 元素内的长词会被误判为已翻译而漏报
+          if (hasWord && translate(t, isUIElement(parent)) === null) {
+            const bucket = classify(t) === 'skip' ? skipped : todo;
+            bucket.set(t, (bucket.get(t) || 0) + 1);
           }
         }
       }
       node = walker.nextNode();
     }
-    const list = Array.from(found.entries()).sort(function (a, b) { return b[1] - a[1]; });
-    console.log('%c[Greasyfork 中文化补充] 本页疑似未翻译的英文文案：', 'font-weight:bold', list.length + ' 条');
-    console.table(list.map(function (e) { return { 英文原文: e[0], 出现次数: e[1] }; }));
-    const snippet = list.map(function (e) {
-      return "      ['" + e[0].replace(/'/g, "\\'") + "', '中文译文'],";
-    }).join('\n');
-    console.log('%c可直接粘贴到词典的格式：\n' + snippet, 'color:#888');
-    toast('已输出 ' + list.length + ' 条候选，请查看控制台（F12）');
-    return list;
+
+    const sortByCount = function (m) {
+      return Array.from(m.entries()).sort(function (a, b) { return b[1] - a[1]; });
+    };
+    const todoList = sortByCount(todo);
+    const skipList = sortByCount(skipped);
+
+    const fmt = function (list) {
+      return list.map(function (e) {
+        return "      ['" + e[0].replace(/'/g, "\\'") + "', '中文译文'],";
+      }).join('\n');
+    };
+
+    console.log(
+      '%c[Greasyfork 中文化补充] 建议翻译 ' + todoList.length + ' 条' +
+      (skipList.length ? '，已过滤 ' + skipList.length + ' 条噪声' : ''),
+      'font-weight:bold'
+    );
+    if (todoList.length) {
+      console.table(todoList.map(function (e) { return { 英文原文: e[0], 出现次数: e[1] }; }));
+      console.log('%c可直接粘贴到词典的格式：\n' + fmt(todoList), 'color:#888');
+    }
+    if (skipList.length) {
+      console.log(
+        '%c以下被判定为专有名词 / 占位符 / 用户名 / 句子残片，未列入建议：\n' +
+        skipList.map(function (e) { return '  ' + e[0]; }).join('\n'),
+        'color:#999'
+      );
+    }
+    toast('已输出 ' + todoList.length + ' 条候选（过滤 ' + skipList.length + ' 条），请查看控制台（F12）');
+    return todoList;
   }
 
   /* --------- 轻量提示条 --------- */
