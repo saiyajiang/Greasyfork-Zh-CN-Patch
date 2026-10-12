@@ -3,7 +3,7 @@
 // @name:zh-CN   Greasyfork 中文化补充
 // @name:en      Greasyfork Chinese Translation Supplement
 // @namespace    https://github.com/saiyajiang/Greasyfork-Zh-CN-Patch
-// @version      1.1.1
+// @version      1.2.0
 // @description  补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案。本脚本由 AI 编写，译文仅供参考。
 // @description:en  Fills in untranslated English UI strings on Greasyfork / Sleazyfork. Written by AI.
@@ -867,53 +867,139 @@
 
   /* --------- 未翻译文案发现：便于扩充词典 --------- */
 
-  const NOISE_RE = /(https?:\/\/|\.(js|css|json|png|jpg|svg|html)\b|[\{\}<>=;\\\/@#]|^[A-Z0-9_.-]{1,4}$|[\u4e00-\u9fff\u3040-\u30ff])/i;
+  /* 纯噪声：整条就是 URL / 路径 / 代码符号 / 文件名，不含可译的自然语言 */
+  const PURE_NOISE_RE = /^(?:https?:\/\/|[a-z]:\\|\/[\w.-]+)+[\w\/.:@#?&=%-]*$/i;
+  const FILE_EXT_RE = /\.(?:js|css|json|png|jpe?g|gif|svg|html?|rb|yml|md)\b/i;
 
   /* 占位符 / 变量名：YourRepoName、YourNumericalProjectID 这类大驼峰连写 */
   const PLACEHOLDER_RE = /^(?:[A-Z][a-z\d]+){2,}$/;
   /* 单个无空格小写标识符：多为用户名、仓库名（saiyajiang 等） */
   const IDENTIFIER_RE = /^[a-z][a-z\d._-]{3,}$/;
-  /* 被 HTML 标签切断的句子残片：(only for release events, where */
-  const FRAGMENT_RE = /^[\(,;.]|[\),;.]$/;
+  /* 被 HTML 标签切断的句子残片：(only for release events, where
+     只认括号——句点 . 与冒号 : 都是正常句尾，不能算残片，否则整页句子都会被误杀 */
+  const FRAGMENT_RE = /^\s*[\(\[]|[\)\]]$/;
+  /* 已含中文：说明这句已经翻过了，不必再建议 */
+  const CJK_RE = /[\u4e00-\u9fff\u3040-\u30ff]/;
+  /* 块级容器：内含这些元素的，导出时只取子元素，避免整段重复计入 */
+  const BLOCK_TAGS_RE = /^(?:P|DIV|LI|TD|TH|DT|DD|SECTION|ARTICLE|UL|OL|TABLE|TR|H[1-6]|BLOCKQUOTE|PRE|FIGURE|FORM|NAV|HEADER|FOOTER|ASIDE|MAIN)$/;
+
+  /* 导出模式的跳过判定：只排除真正的代码 / 输入区与本脚本注入物。
+     替换用的 isSkipped 会连带排除 markdown、user-content 等容器，
+     但说明文档正文恰好就长在这些容器里 —— 导出若沿用会大量漏报。 */
+  function isExportSkipped(el) {
+    let node = el;
+    let depth = 0;
+    while (node && node.nodeType === 1 && depth < 8) {
+      if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE' ||
+          node.tagName === 'NOSCRIPT' || node.tagName === 'TEXTAREA' ||
+          node.tagName === 'CODE' || node.tagName === 'PRE' ||
+          node.tagName === 'TITLE' || node.tagName === 'SELECT') return true;
+      const cls = typeof node.className === 'string' ? node.className : '';
+      if (cls && /(gfzh-toast|highlight|ace|codemirror)/i.test(cls)) return true;
+      if (node.hasAttribute && node.hasAttribute('data-gfzh')) return true;
+      node = node.parentElement;
+      depth++;
+    }
+    return false;
+  }
+
+  /* 把长段落按句子边界切成与肉眼一致的一条条文案 */
+  function splitSentences(text) {
+    const parts = text.split(/(?<=[.!?])\s+|\n+|(?<=[；;])\s*/);
+    const out = [];
+    parts.forEach(function (p) {
+      const s = normalize(p);
+      if (!s) return;
+      // 超长片段再按逗号切，避免整段落成一条无法翻译
+      if (s.length > 160) {
+        s.split(/,\s*/).forEach(function (c) {
+          const cc = normalize(c);
+          if (cc) out.push(cc);
+        });
+      } else {
+        out.push(s);
+      }
+    });
+    return out;
+  }
 
   function classify(t) {
     const low = t.toLowerCase();
-    if (SKIP_WORDS.has(low)) return 'skip';
-    if (PLACEHOLDER_RE.test(t)) return 'skip';
-    if (FRAGMENT_RE.test(t.trim())) return 'skip';
-    if (IDENTIFIER_RE.test(t)) return 'skip';
+    if (CJK_RE.test(t)) return '已含中文（多半已翻译）';
+    if (SKIP_WORDS.has(low)) return '专名/占位符（白名单）';
+    if (PLACEHOLDER_RE.test(t)) return '占位符';
+    if (FRAGMENT_RE.test(t.trim())) return '句子残片（被标签切断）';
+    if (IDENTIFIER_RE.test(t)) return '用户名/标识符';
     // 含受保护专名（如 Greasy Fork+）的整句同样不建议——翻了会破坏第三方脚本名
-    if (PROTECT_RE.test(t)) return 'skip';
-    return 'todo';
+    if (PROTECT_RE.test(t)) return '受保护专名（Greasy Fork+）';
+    if (PURE_NOISE_RE.test(t)) return '纯 URL/路径';
+    return null;
   }
 
   function collectUntranslated() {
     const todo = new Map();
     const skipped = new Map();
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-    let node = walker.nextNode();
-    while (node) {
-      const parent = node.parentElement;
-      const raw = node.nodeValue;
-      if (raw && parent && !isSkipped(parent)) {
-        const t = normalize(raw);
-        if (t.length >= 2 && t.length <= 60 && /[A-Za-z]{2,}/.test(t) && !NOISE_RE.test(t)) {
-          const hasWord = t.split(/\s+/).some(function (w) {
-            return /^[A-Za-z][A-Za-z'’-]{1,}$/.test(w) && w.length > 2;
-          });
-          // 用与替换逻辑完全一致的方式判断「是否已覆盖」，
-          // 否则含已知短语、但不在 UI 元素内的长词会被误判为已翻译而漏报
-          if (hasWord && translate(t, isUIElement(parent)) === null) {
-            const bucket = classify(t) === 'skip' ? skipped : todo;
-            bucket.set(t, (bucket.get(t) || 0) + 1);
-          }
-        }
+
+    const addTodo = function (t, inline) {
+      const prev = todo.get(t);
+      todo.set(t, { count: (prev ? prev.count : 0) + 1, inline: (prev && prev.inline) || !!inline });
+    };
+    const addSkip = function (t, why) {
+      const prev = skipped.get(t);
+      skipped.set(t, { why: why, count: (prev ? prev.count : 0) + 1 });
+    };
+
+    // 以「不含块级子元素的元素」为单位取 innerText，
+    // 这样 <p>Set up <code>x</code> like this.</p> 拿到的是完整句子而非残片
+    const all = document.body.querySelectorAll('*');
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i];
+      if (isExportSkipped(el)) continue;
+
+      let hasBlockChild = false;
+      for (let j = 0; j < el.children.length; j++) {
+        if (BLOCK_TAGS_RE.test(el.children[j].tagName)) { hasBlockChild = true; break; }
       }
-      node = walker.nextNode();
+      if (hasBlockChild) continue;
+
+      const raw = (el.innerText || el.textContent || '').trim();
+      if (!raw) continue;
+      // 该元素自身的文本（排除后代里被 code 包裹的部分）
+      let own = '';
+      for (let j = 0; j < el.childNodes.length; j++) {
+        const c = el.childNodes[j];
+        if (c.nodeType === 3) own += c.nodeValue;
+        else if (c.nodeType === 1 && !/^(CODE|PRE|SCRIPT|STYLE)$/.test(c.tagName)) own += (c.innerText || '');
+      }
+      const text = normalize(own || raw);
+      if (!text || !/[A-Za-z]{2,}/.test(text)) continue;
+      // 元素内嵌有 <code>：抽掉代码后句子可能不完整，提示用户对照页面看
+      const hasInlineCode = !!el.querySelector('code, pre');
+
+      const sentences = splitSentences(text);
+      sentences.forEach(function (t) {
+        if (t.length < 2 || t.length > 300) return;
+        if (!/[A-Za-z]{2,}/.test(t)) return;
+        const hasWord = t.split(/\s+/).some(function (w) {
+          return /^[A-Za-z][A-Za-z'’-]{1,}$/.test(w) && w.length > 2;
+        });
+        if (!hasWord) return;
+        // 用与替换逻辑完全一致的方式判断「是否已覆盖」，
+        // 否则含已知短语、但不在 UI 元素内的长词会被误判为已翻译而漏报
+        if (translate(t, isUIElement(el)) !== null) return;
+
+        const why = classify(t);
+        if (why) addSkip(t, why);
+        else addTodo(t, hasInlineCode);
+      });
     }
 
     const sortByCount = function (m) {
-      return Array.from(m.entries()).sort(function (a, b) { return b[1] - a[1]; });
+      return Array.from(m.entries()).sort(function (a, b) {
+        const ca = a[1] && typeof a[1] === 'object' ? a[1].count : a[1];
+        const cb = b[1] && typeof b[1] === 'object' ? b[1].count : b[1];
+        return cb - ca;
+      });
     };
     const todoList = sortByCount(todo);
     const skipList = sortByCount(skipped);
@@ -926,19 +1012,27 @@
 
     console.log(
       '%c[Greasyfork 中文化补充] 建议翻译 ' + todoList.length + ' 条' +
-      (skipList.length ? '，已过滤 ' + skipList.length + ' 条噪声' : ''),
+      (skipList.length ? '，已过滤 ' + skipList.length + ' 条' : ''),
       'font-weight:bold'
     );
     if (todoList.length) {
-      console.table(todoList.map(function (e) { return { 英文原文: e[0], 出现次数: e[1] }; }));
+      console.table(todoList.map(function (e) {
+        return {
+          英文原文: e[0],
+          出现次数: e[1].count,
+          备注: [
+            e[1].inline ? '含内联代码，原文可能不完整' : '',
+            /https?:\/\//i.test(e[0]) ? '含链接' : ''
+          ].filter(Boolean).join('；')
+        };
+      }));
       console.log('%c可直接粘贴到词典的格式：\n' + fmt(todoList), 'color:#888');
     }
     if (skipList.length) {
-      console.log(
-        '%c以下被判定为专有名词 / 占位符 / 用户名 / 句子残片，未列入建议：\n' +
-        skipList.map(function (e) { return '  ' + e[0]; }).join('\n'),
-        'color:#999'
-      );
+      console.log('%c以下未列入建议（附过滤原因）：', 'color:#999');
+      console.table(skipList.map(function (e) {
+        return { 英文原文: e[0], 原因: e[1].why, 出现次数: e[1].count };
+      }));
     }
     toast('已输出 ' + todoList.length + ' 条候选（过滤 ' + skipList.length + ' 条），请查看控制台（F12）');
     return todoList;
