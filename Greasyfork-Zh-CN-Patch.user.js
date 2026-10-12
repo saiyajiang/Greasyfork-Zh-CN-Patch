@@ -3,7 +3,7 @@
 // @name:zh-CN   Greasyfork 中文化补充
 // @name:en      Greasyfork Chinese Translation Supplement
 // @namespace    https://github.com/saiyajiang/Greasyfork-Zh-CN-Patch
-// @version      1.1.0
+// @version      1.1.1
 // @description  补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案。本脚本由 AI 编写，译文仅供参考。
 // @description:en  Fills in untranslated English UI strings on Greasyfork / Sleazyfork. Written by AI.
@@ -469,10 +469,13 @@
       ['Hungarian (hu)', '匈牙利语（hu）']
     ],
 
-    /* 专有名词 / 占位符：明确不翻译，仅用于导出时过滤噪声 */
+    /* 专有名词 / 占位符 / 第三方脚本名：明确不翻译，仅用于导出时过滤噪声
+       注意：'Greasy Fork+' 是另一名作者（Davide）的独立用户脚本，与本站无关，
+       务必作为整体保留，不可拆成 'Greasy Fork' 后单独翻译。 */
     '不翻译（白名单）': [
-      ['Greasy Fork', null],
       ['Greasy Fork+', null],
+      ['Greasy Fork', null],
+      ['Greasyfork+', null],
       ['Greasyfork', null],
       ['Sleazy Fork', null],
       ['Sleazyfork', null],
@@ -485,6 +488,7 @@
       ['Tampermonkey', null],
       ['Violentmonkey', null],
       ['Greasemonkey', null],
+      ['FireMonkey', null],
       ['OpenUserJS', null],
       ['YourRepoName', null],
       ['YourProjectName', null],
@@ -578,6 +582,11 @@
       if (!EXACT.has(key)) EXACT.set(key, pair[1]);
     });
   });
+
+  /* 硬保护：文本中一旦出现带「+」的 Greasy Fork+（Davide 的独立脚本），
+     整段不做任何改动，避免被当作 'Greasy Fork' 拆开或被短语规则局部命中。
+     注意只匹配带 + 的形式，否则会误伤含站名的正常句子（如 Webhook 提示句）。 */
+  const PROTECT_RE = /(?:greasy\s*fork|greasyfork)\s*\+/i;
 
   const SKIP_TAGS = new Set([
     'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE', 'TITLE',
@@ -679,6 +688,9 @@
 
   function translate(t, ui) {
     if (!t) return null;
+
+    // 硬保护：含受保护专名的文本一律不动，避免被拆开或局部替换
+    if (PROTECT_RE.test(t)) return null;
 
     let r = applyRules(t, false);
     if (r !== null) return r;
@@ -870,6 +882,8 @@
     if (PLACEHOLDER_RE.test(t)) return 'skip';
     if (FRAGMENT_RE.test(t.trim())) return 'skip';
     if (IDENTIFIER_RE.test(t)) return 'skip';
+    // 含受保护专名（如 Greasy Fork+）的整句同样不建议——翻了会破坏第三方脚本名
+    if (PROTECT_RE.test(t)) return 'skip';
     return 'todo';
   }
 
