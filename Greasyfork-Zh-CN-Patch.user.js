@@ -1,0 +1,837 @@
+// ==UserScript==
+// @name         Greasyfork 中文化补充
+// @name:zh-CN   Greasyfork 中文化补充
+// @name:en      Greasyfork Chinese Translation Supplement
+// @namespace    https://github.com/saiyajiang/Greasyfork-Zh-CN-Patch
+// @version      1.0.0
+// @description  补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
+// @description:zh-CN 补全 Greasyfork（含 Sleazyfork）中文界面中未翻译、漏翻的英文文案。本脚本由 AI 编写，译文仅供参考。
+// @description:en  Fills in untranslated English UI strings on Greasyfork / Sleazyfork. Written by AI.
+// @author       saiyajiang
+// @license      MIT
+// @homepageURL  https://github.com/saiyajiang/Greasyfork-Zh-CN-Patch
+// @supportURL   https://github.com/saiyajiang/Greasyfork-Zh-CN-Patch/issues
+// @source       https://github.com/saiyajiang/Greasyfork-Zh-CN-Patch
+// @match        https://greasyfork.org/*
+// @match        https://sleazyfork.org/*
+// @run-at       document-idle
+// @grant        GM_registerMenuCommand
+// @noframes
+// ==/UserScript==
+
+/*
+ * Greasyfork 中文化补充
+ * ------------------------------------------------------------------
+ * 作用：把中文站上仍然显示为英文的界面文案补成中文。
+ *
+ * 安全策略（避免误伤脚本标题、简介、代码等用户内容）：
+ *   1. 文本节点只在「整段文本完全等于某条英文词条」时才替换；
+ *   2. 短语级替换只在按钮 / 表单标签 / 表头 / 导航等 UI 元素内进行；
+ *   3. code / pre / textarea / 脚本卡片 / 评论正文等区域整体跳过；
+ *   4. 只在中文界面（/zh-CN 或 lang=zh）下生效，不会把英文站翻成中文。
+ *
+ * 维护：菜单「导出本页未翻译的英文文案」可把漏网之鱼输出成词典格式，
+ *       粘到下方 DICT_GROUPS 里即可扩充词库。
+ */
+
+(function () {
+  'use strict';
+
+  /* ============================ 配置 ============================ */
+
+  const STORE_KEY = 'gfzh_patch_enabled';
+  const MAX_TEXT_LEN = 120; // 超过此长度的文本节点不做短语替换
+
+  /* ============================ 词典 ============================
+   * 格式：[英文原文, 中文译文]，匹配时忽略大小写、忽略首尾空白。
+   * 想补充词条，直接往对应分组里加一行即可。
+   * ============================================================== */
+
+  const DICT_GROUPS = {
+    '导航与账号': [
+      ['Home', '首页'],
+      ['Scripts', '脚本'],
+      ['Libraries', '库'],
+      ['Library', '库'],
+      ['Suites', '套件'],
+      ['Suite', '套件'],
+      ['Users', '用户'],
+      ['User', '用户'],
+      ['Forums', '论坛'],
+      ['Forum', '论坛'],
+      ['Help', '帮助'],
+      ['Search', '搜索'],
+      ['Advanced search', '高级搜索'],
+      ['Browse', '浏览'],
+      ['Random', '随机'],
+      ['Random script', '随机脚本'],
+      ['Trending', '热门'],
+      ['Popular', '热门'],
+      ['Submit a script', '提交脚本'],
+      ['My scripts', '我的脚本'],
+      ['My account', '我的账户'],
+      ['Account', '账户'],
+      ['Dashboard', '控制面板'],
+      ['Settings', '设置'],
+      ['Preferences', '偏好设置'],
+      ['Profile', '个人资料'],
+      ['Inbox', '收件箱'],
+      ['Messages', '私信'],
+      ['Message', '私信'],
+      ['Notifications', '通知'],
+      ['Moderation', '审核管理'],
+      ['Moderator', '审核员'],
+      ['Admin', '管理员'],
+      ['Administration', '管理后台'],
+      ['Log in', '登录'],
+      ['Login', '登录'],
+      ['Sign in', '登录'],
+      ['Log out', '退出登录'],
+      ['Logout', '退出登录'],
+      ['Sign out', '退出登录'],
+      ['Register', '注册'],
+      ['Sign up', '注册'],
+      ['Create account', '创建账号'],
+      ['Forgot password?', '忘记密码？'],
+      ['Remember me', '记住我'],
+      ['Password', '密码'],
+      ['Email', '邮箱'],
+      ['Username', '用户名'],
+      ['Username or email', '用户名或邮箱'],
+      ['Confirm password', '确认密码'],
+      ['Current password', '当前密码'],
+      ['New password', '新密码'],
+      ['Donate', '捐赠'],
+      ['About', '关于'],
+      ['Contact', '联系我们'],
+      ['Contact us', '联系我们'],
+      ['Terms of service', '服务条款'],
+      ['Terms', '条款'],
+      ['Privacy policy', '隐私政策'],
+      ['Privacy', '隐私'],
+      ['Blog', '博客'],
+      ['Status', '状态'],
+      ['FAQ', '常见问题'],
+      ['Help translate', '帮助翻译'],
+      ['Feedback', '反馈'],
+      ['Report a bug', '反馈问题'],
+      ['Changelog', '更新日志']
+    ],
+
+    '列表与排序': [
+      ['Sort by', '排序方式'],
+      ['Sort', '排序'],
+      ['Relevance', '相关度'],
+      ['Most installs', '安装量最多'],
+      ['Most daily installs', '每日安装最多'],
+      ['Recently updated', '最近更新'],
+      ['Recently added', '最近添加'],
+      ['Newest', '最新'],
+      ['Oldest', '最早'],
+      ['Rating', '评分'],
+      ['Ratings', '评分'],
+      ['Installs', '安装量'],
+      ['Daily installs', '每日安装量'],
+      ['Total installs', '总安装量'],
+      ['Total', '总计'],
+      ['Average', '平均'],
+      ['Name', '名称'],
+      ['Title', '标题'],
+      ['Date', '日期'],
+      ['Time', '时间'],
+      ['Created', '创建时间'],
+      ['Updated', '更新于'],
+      ['Last updated', '最后更新'],
+      ['Published', '发布时间'],
+      ['Filter', '筛选'],
+      ['Filters', '筛选条件'],
+      ['Apply', '应用'],
+      ['Reset', '重置'],
+      ['Clear', '清除'],
+      ['Clear all', '全部清除'],
+      ['Any', '任意'],
+      ['All', '全部'],
+      ['None', '无'],
+      ['Yes', '是'],
+      ['No', '否'],
+      ['Next', '下一页'],
+      ['Previous', '上一页'],
+      ['Next page', '下一页'],
+      ['Previous page', '上一页'],
+      ['First', '第一页'],
+      ['Last', '最后一页'],
+      ['More', '更多'],
+      ['Show more', '显示更多'],
+      ['Show less', '显示更少'],
+      ['Load more', '加载更多'],
+      ['Expand', '展开'],
+      ['Collapse', '折叠'],
+      ['Read more', '阅读更多'],
+      ['Go', '前往']
+    ],
+
+    '脚本详情': [
+      ['Version', '版本'],
+      ['Versions', '版本'],
+      ['Author', '作者'],
+      ['Authors', '作者'],
+      ['License', '许可证'],
+      ['Description', '简介'],
+      ['Additional info', '附加信息'],
+      ['Compatibility', '兼容性'],
+      ['Applies to', '适用于'],
+      ['History', '历史'],
+      ['Diff', '差异对比'],
+      ['Compare', '对比'],
+      ['Source code', '源代码'],
+      ['View source', '查看源码'],
+      ['Raw', '原始文件'],
+      ['Download', '下载'],
+      ['Stats', '统计'],
+      ['Statistics', '统计'],
+      ['Discussions', '讨论'],
+      ['Discussion', '讨论'],
+      ['New discussion', '发起讨论'],
+      ['Comments', '评论'],
+      ['Comment', '评论'],
+      ['Reply', '回复'],
+      ['Replies', '回复'],
+      ['Quote', '引用'],
+      ['Derivatives', '衍生脚本'],
+      ['Translations', '翻译版本'],
+      ['Localization', '本地化'],
+      ['Translators', '译者'],
+      ['Contributors', '贡献者'],
+      ['Credits', '鸣谢'],
+      ['Script type', '脚本类型'],
+      ['Script set', '脚本集'],
+      ['Script sets', '脚本集'],
+      ['This script is a library', '此脚本为库'],
+      ['Sensitive', '敏感内容'],
+      ['Adult content', '成人内容'],
+      ['Adult', '成人内容'],
+      ['Contains adult content', '含成人内容'],
+      ['Requirements', '要求'],
+      ['Dependencies', '依赖'],
+      ['Includes', '匹配网址'],
+      ['Excludes', '排除网址'],
+      ['Matches', '匹配网址'],
+      ['Category', '分类'],
+      ['Categories', '分类'],
+      ['Tags', '标签'],
+      ['Tag', '标签'],
+      ['Site', '站点'],
+      ['Sites', '站点'],
+      ['Code', '代码'],
+      ['Upload', '上传'],
+      ['Import', '导入'],
+      ['Export', '导出']
+    ],
+
+    '操作按钮': [
+      ['Install', '安装'],
+      ['Update', '更新'],
+      ['Installed', '已安装'],
+      ['Uninstall', '卸载'],
+      ['Reinstall', '重新安装'],
+      ['Update available', '有可用更新'],
+      ['Install this script', '安装此脚本'],
+      ['Install this script?', '安装此脚本？'],
+      ['How to install', '如何安装'],
+      ['Installation instructions', '安装说明'],
+      ['Edit', '编辑'],
+      ['Delete', '删除'],
+      ['Remove', '移除'],
+      ['Save', '保存'],
+      ['Save changes', '保存更改'],
+      ['Cancel', '取消'],
+      ['Confirm', '确认'],
+      ['Close', '关闭'],
+      ['Back', '返回'],
+      ['Submit', '提交'],
+      ['Preview', '预览'],
+      ['Publish', '发布'],
+      ['Unpublish', '取消发布'],
+      ['Fork', '复刻'],
+      ['Watch', '关注'],
+      ['Unwatch', '取消关注'],
+      ['Watching', '关注中'],
+      ['Follow', '关注'],
+      ['Unfollow', '取消关注'],
+      ['Favorite', '收藏'],
+      ['Unfavorite', '取消收藏'],
+      ['Favorites', '收藏夹'],
+      ['Add to favorites', '加入收藏'],
+      ['Share', '分享'],
+      ['Copy', '复制'],
+      ['Copy link', '复制链接'],
+      ['Copied', '已复制'],
+      ['Copied!', '已复制！'],
+      ['Send', '发送'],
+      ['Send message', '发送私信'],
+      ['Report', '举报'],
+      ['Report script', '举报脚本'],
+      ['Report user', '举报用户'],
+      ['Report abuse', '举报滥用'],
+      ['Flag', '标记'],
+      ['Ban', '封禁'],
+      ['Unban', '解封'],
+      ['Approve', '通过'],
+      ['Reject', '驳回'],
+      ['Pending', '待处理'],
+      ['Resolved', '已处理'],
+      ['Reopen', '重新开启'],
+      ['Lock', '锁定'],
+      ['Unlock', '解锁'],
+      ['Sticky', '置顶'],
+      ['Unsticky', '取消置顶'],
+      ['Mark as read', '标为已读'],
+      ['Mark all as read', '全部标为已读'],
+      ['Subscribe', '订阅'],
+      ['Unsubscribe', '取消订阅'],
+      ['Add', '添加'],
+      ['Create', '创建'],
+      ['New', '新建'],
+      ['Undo', '撤销'],
+      ['Redo', '重做'],
+      ['Retry', '重试'],
+      ['Refresh', '刷新'],
+      ['Try again', '请重试'],
+      ['Select all', '全选'],
+      ['Deselect all', '取消全选'],
+      ['Select file', '选择文件'],
+      ['Choose file', '选择文件'],
+      ['No file chosen', '未选择文件'],
+      ['Drop files here', '将文件拖到此处']
+    ],
+
+    '用户页面': [
+      ['Joined', '注册于'],
+      ['Last seen', '最后活跃'],
+      ['Level', '等级'],
+      ['Badges', '徽章'],
+      ['Reputation', '声望'],
+      ['Threads', '主题'],
+      ['Posts', '帖子'],
+      ['Activity', '动态'],
+      ['Followers', '关注者'],
+      ['Following', '关注中'],
+      ['Online', '在线'],
+      ['Offline', '离线'],
+      ['Banned', '已封禁']
+    ],
+
+    '提示与状态': [
+      ['Loading', '加载中'],
+      ['Loading...', '加载中…'],
+      ['Please wait', '请稍候'],
+      ['Error', '错误'],
+      ['An error occurred', '发生错误'],
+      ['Something went wrong', '出现错误'],
+      ['Warning', '警告'],
+      ['Notice', '提示'],
+      ['Success', '成功'],
+      ['Info', '信息'],
+      ['Tip', '小提示'],
+      ['Note:', '注意：'],
+      ['Note', '备注'],
+      ['Notes', '备注'],
+      ['Reason', '原因'],
+      ['Optional', '可选'],
+      ['Required', '必填'],
+      ['Public', '公开'],
+      ['Private', '私有'],
+      ['Unlisted', '不公开列出'],
+      ['Draft', '草稿'],
+      ['Type', '类型'],
+      ['Unknown', '未知'],
+      ['N/A', '不适用'],
+      ['Empty', '空'],
+      ['No results', '无结果'],
+      ['No results found', '未找到结果'],
+      ['Nothing found', '未找到内容'],
+      ['Nothing here yet', '暂无内容'],
+      ['Not found', '未找到'],
+      ['Page not found', '页面不存在'],
+      ['Access denied', '拒绝访问'],
+      ['Forbidden', '禁止访问'],
+      ['Permission denied', '权限不足'],
+      ['Are you sure?', '确定吗？'],
+      ['Are you sure you want to delete this?', '确定要删除吗？'],
+      ['This action cannot be undone', '此操作无法撤销'],
+      ['Sign in to continue', '登录后继续'],
+      ['You must be logged in', '请先登录'],
+      ['Saved', '已保存'],
+      ['Deleted', '已删除'],
+      ['Enabled', '已启用'],
+      ['Disabled', '已停用'],
+      ['Enable', '启用'],
+      ['Disable', '停用'],
+      ['On', '开'],
+      ['Off', '关'],
+      ['Show', '显示'],
+      ['Hide', '隐藏'],
+      ['General', '常规'],
+      ['Details', '详情'],
+      ['Overview', '概览'],
+      ['Summary', '摘要'],
+      ['Options', '选项'],
+      ['Advanced', '高级'],
+      ['Basic', '基本'],
+      ['Default', '默认'],
+      ['Custom', '自定义'],
+      ['Other', '其他'],
+      ['Others', '其他'],
+      ['Actions', '操作'],
+      ['Action', '操作'],
+      ['Language', '语言'],
+      ['Characters remaining', '剩余字符数'],
+      ['and', '和'],
+      ['or', '或']
+    ]
+  };
+
+  /* 短语级替换：只在 button / label / 表头 / 导航等 UI 元素内生效 */
+  const PHRASES = [
+    ['Sort by', '排序方式'],
+    ['Search scripts', '搜索脚本'],
+    ['Search users', '搜索用户'],
+    ['Search forums', '搜索论坛'],
+    ['Installs per day', '每日安装量'],
+    ['Total installs', '总安装量'],
+    ['Daily installs', '每日安装量'],
+    ['Last updated', '最后更新'],
+    ['Created by', '创建者'],
+    ['Updated by', '更新者'],
+    ['Show more', '显示更多'],
+    ['Read more', '阅读更多'],
+    ['Load more', '加载更多'],
+    ['Mark all as read', '全部标为已读'],
+    ['Add to favorites', '加入收藏'],
+    ['Remove from favorites', '取消收藏'],
+    ['Send message', '发送私信'],
+    ['Report script', '举报脚本'],
+    ['How to install', '如何安装'],
+    ['Script updated', '脚本已更新'],
+    ['Script created', '脚本已创建'],
+    ['No scripts found', '未找到脚本'],
+    ['No discussions found', '未找到讨论'],
+    ['No comments yet', '暂无评论'],
+    ['Log in to', '登录后'],
+    ['Sign in to', '登录后'],
+    ['Are you sure', '确定吗'],
+    ['Page not found', '页面不存在'],
+    ['Delete this script', '删除此脚本'],
+    ['Report this script', '举报此脚本'],
+    ['Posted by', '发布者'],
+    ['Updated at', '更新于'],
+    ['Created at', '创建于']
+  ];
+
+  /* 正则规则：处理带数字 / 变量的文案 */
+  const UNIT_MAP = {
+    second: '秒', minute: '分钟', hour: '小时',
+    day: '天', week: '周', month: '个月', year: '年'
+  };
+
+  const RULES = [
+    { re: /^just now$/i, rep: '刚刚' },
+    { re: /^less than a (?:minute|second) ago$/i, rep: '刚刚' },
+    {
+      re: /\b(\d+)\s+(second|minute|hour|day|week|month|year)s?\s+ago\b/i,
+      rep: (_m, n, unit) => n + ' ' + UNIT_MAP[unit.toLowerCase().replace(/s$/, '')] + '前'
+    },
+    {
+      re: /^in\s+(\d+)\s+(second|minute|hour|day|week|month|year)s?$/i,
+      rep: (_m, n, unit) => n + ' ' + UNIT_MAP[unit.toLowerCase().replace(/s$/, '')] + '后'
+    },
+    { re: /^(\d+)\s+of\s+(\d+)$/, rep: '$1 / $2' },
+    { re: /^(\d+)\s+results?$/i, rep: '$1 个结果' },
+    { re: /^(\d+)\s+scripts?$/i, rep: '$1 个脚本' },
+    { re: /^(\d+)\s+installs?$/i, rep: '$1 次安装' },
+    { re: /^(\d+)\s+comments?$/i, rep: '$1 条评论' },
+    { re: /^(\d+)\s+ratings?$/i, rep: '$1 个评分' },
+    { re: /^(\d+)\s+new\s+(?:messages?|notifications?)$/i, rep: '$1 条新消息' },
+    { re: /^by\s+(\S.{0,38})$/i, rep: '作者：$1', uiOnly: true }
+  ];
+
+  /* ============================ 基础设施 ============================ */
+
+  const EXACT = new Map();
+  Object.keys(DICT_GROUPS).forEach(function (group) {
+    DICT_GROUPS[group].forEach(function (pair) {
+      const key = String(pair[0]).toLowerCase();
+      if (!EXACT.has(key)) EXACT.set(key, pair[1]);
+    });
+  });
+
+  const SKIP_TAGS = new Set([
+    'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE', 'TITLE',
+    'SVG', 'MATH', 'TEMPLATE', 'IFRAME', 'CANVAS', 'XMP', 'PLAINTEXT'
+  ]);
+
+  /* 这些区域属于用户内容 / 代码，整体跳过 */
+  const SKIP_CLASS_RE = /(script-link|script-name|script-card|script-list|script-details|script-description|discussion|comment|highlight|code|ace|codemirror|markdown|user-content|breadcrumb|library-list)/i;
+
+  /* 允许做短语级替换的 UI 元素 */
+  const UI_TAGS = new Set([
+    'BUTTON', 'LABEL', 'LEGEND', 'OPTION', 'OPTGROUP', 'TH', 'SUMMARY',
+    'CAPTION', 'FIGCAPTION', 'DT', 'INPUT'
+  ]);
+  const UI_CLASS_RE = /(?:^|[\s_-])(btn|button|nav|menu|tab|pill|badge|chip|label|toolbar|actions|pagination|notice|alert|flash|tooltip|dialog|modal|header|footer|sidebar|search|sort|filter|form-group|field)(?:[\s_-]|$)/i;
+
+  const ATTRS = ['placeholder', 'title', 'aria-label', 'alt', 'data-confirm'];
+
+  const seen = new WeakSet();
+  const records = [];
+  let stats = { text: 0, attr: 0 };
+  let enabled = true;
+  let observer = null;
+  let timer = null;
+
+  function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function normalize(s) {
+    return s.replace(/\s+/g, ' ').trim();
+  }
+
+  function isChinesePage() {
+    if (/^\/zh(-CN|-TW|-HK)?(\/|$)/i.test(location.pathname)) return true;
+    const lang = document.documentElement.lang || '';
+    if (/^zh\b/i.test(lang)) return true;
+    return false;
+  }
+
+  function isSkipped(el) {
+    let node = el;
+    let depth = 0;
+    while (node && node.nodeType === 1 && depth < 8) {
+      if (SKIP_TAGS.has(node.tagName)) return true;
+      const cls = typeof node.className === 'string' ? node.className : '';
+      if (cls && SKIP_CLASS_RE.test(cls)) return true;
+      node = node.parentElement;
+      depth++;
+    }
+    return false;
+  }
+
+  function isUIElement(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (UI_TAGS.has(el.tagName)) return true;
+    const cls = typeof el.className === 'string' ? el.className : '';
+    if (cls && UI_CLASS_RE.test(cls)) return true;
+    const inChrome = el.closest && el.closest('nav, footer, header, aside, form, [role="navigation"], [role="banner"]');
+    return !!inChrome;
+  }
+
+  /* 精确匹配（忽略大小写 + 首尾空白与冒号） */
+  function lookupExact(t) {
+    const k = t.toLowerCase();
+    if (EXACT.has(k)) return EXACT.get(k);
+    const stripped = t
+      .replace(/^[\s:：·•>\-–—]+/, '')
+      .replace(/[\s:：·•<\-–—]+$/, '')
+      .toLowerCase();
+    if (stripped && stripped !== k && EXACT.has(stripped)) return EXACT.get(stripped);
+    return null;
+  }
+
+  function applyPhrases(t) {
+    let out = t;
+    let changed = false;
+    for (let i = 0; i < PHRASES.length; i++) {
+      const re = new RegExp('\\b' + escapeRegExp(PHRASES[i][0]) + '\\b', 'gi');
+      if (re.test(out)) {
+        out = out.replace(re, PHRASES[i][1]);
+        changed = true;
+      }
+    }
+    return changed ? out : null;
+  }
+
+  function applyRules(t, uiOnly) {
+    for (let i = 0; i < RULES.length; i++) {
+      const rule = RULES[i];
+      if (!!rule.uiOnly !== !!uiOnly) continue;
+      const m = t.match(rule.re);
+      if (!m) continue;
+      if (typeof rule.rep === 'function') return t.replace(rule.re, rule.rep);
+      return t.replace(rule.re, rule.rep);
+    }
+    return null;
+  }
+
+  function translate(t, ui) {
+    if (!t) return null;
+
+    let r = applyRules(t, false);
+    if (r !== null) return r;
+
+    const exact = lookupExact(t);
+    if (exact !== null) return exact;
+
+    if (ui && t.length <= MAX_TEXT_LEN) {
+      r = applyRules(t, true);
+      if (r !== null) return r;
+      r = applyPhrases(t);
+      if (r !== null) return r;
+    }
+    return null;
+  }
+
+  /* 保留原文首尾空白，只替换中间部分 */
+  function wrapPreserve(raw, translated) {
+    const lead = raw.match(/^\s*/)[0];
+    const tail = raw.match(/\s*$/)[0];
+    const core = raw.slice(lead.length, raw.length - tail.length);
+    const tCore = normalize(core);
+    if (core === tCore) return lead + translated + tail;
+    return lead + core.replace(tCore, translated) + tail;
+  }
+
+  function setText(node, next) {
+    records.push({ node: node, before: node.nodeValue });
+    node.nodeValue = next;
+    stats.text++;
+  }
+
+  function handleTextNode(node) {
+    if (seen.has(node)) return;
+    seen.add(node);
+    const raw = node.nodeValue;
+    if (!raw || !raw.trim()) return;
+    const parent = node.parentElement;
+    if (!parent || !document.body.contains(parent)) return;
+    if (isSkipped(parent)) return;
+
+    const t = normalize(raw);
+    if (!t) return;
+
+    const ui = isUIElement(parent);
+    const next = translate(t, ui);
+    if (next !== null && next !== t) {
+      setText(node, wrapPreserve(raw, next));
+    }
+  }
+
+  function translateAttr(el, name) {
+    if (!el.hasAttribute(name)) return;
+    const raw = el.getAttribute(name);
+    if (!raw || !raw.trim()) return;
+    const t = normalize(raw);
+    const next = translate(t, true);
+    if (next !== null && next !== t) {
+      records.push({ el: el, attr: name, before: raw });
+      el.setAttribute(name, next);
+      stats.attr++;
+    }
+  }
+
+  function handleElement(el) {
+    if (seen.has(el)) return;
+    seen.add(el);
+
+    // 代码 / 可编辑区域：只翻译 placeholder，绝不改动内容
+    if (el.tagName === 'TEXTAREA' || el.tagName === 'CODE' || el.tagName === 'PRE') {
+      translateAttr(el, 'placeholder');
+      return;
+    }
+    if (isSkipped(el)) return;
+
+    // 属性文案
+    for (let i = 0; i < ATTRS.length; i++) translateAttr(el, ATTRS[i]);
+
+    // 提交类按钮的 value
+    if (el.tagName === 'INPUT') {
+      const type = (el.getAttribute('type') || '').toLowerCase();
+      if (type === 'submit' || type === 'button' || type === 'reset') {
+        const raw = el.value;
+        if (raw && raw.trim()) {
+          const t = normalize(raw);
+          const next = translate(t, true);
+          if (next !== null && next !== t) {
+            records.push({ el: el, attr: 'value', before: raw });
+            el.value = next;
+            stats.attr++;
+          }
+        }
+      }
+    }
+  }
+
+  function scan(root) {
+    if (!enabled) return;
+    const scope = root || document.body;
+    if (!scope) return;
+
+    if (scope.nodeType === 3) {
+      handleTextNode(scope);
+      return;
+    }
+
+    const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null);
+    let node = walker.nextNode();
+    while (node) {
+      if (node.nodeType === 3) handleTextNode(node);
+      else if (node.nodeType === 1) handleElement(node);
+      node = walker.nextNode();
+    }
+  }
+
+  function schedule() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
+      timer = null;
+      scan(document.body);
+    }, 150);
+  }
+
+  function startObserver() {
+    if (observer || typeof MutationObserver === 'undefined') return;
+    observer = new MutationObserver(function (mutations) {
+      if (!enabled) return;
+      let dirty = false;
+      for (let i = 0; i < mutations.length; i++) {
+        const m = mutations[i];
+        if (m.type === 'characterData') dirty = true;
+        if (m.addedNodes && m.addedNodes.length) {
+          for (let j = 0; j < m.addedNodes.length; j++) {
+            const n = m.addedNodes[j];
+            if (n.nodeType === 1 || n.nodeType === 3) dirty = true;
+          }
+        }
+      }
+      if (dirty) schedule();
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+
+  function stopObserver() {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  }
+
+  function restore() {
+    for (let i = records.length - 1; i >= 0; i--) {
+      const rec = records[i];
+      try {
+        if (rec.attr) rec.el.setAttribute(rec.attr, rec.before);
+        else if (rec.node) rec.node.nodeValue = rec.before;
+      } catch (e) { /* 节点已被移除，忽略 */ }
+    }
+    records.length = 0;
+  }
+
+  function setEnabled(next) {
+    enabled = !!next;
+    try { localStorage.setItem(STORE_KEY, enabled ? '1' : '0'); } catch (e) { /* 忽略 */ }
+    if (enabled) {
+      scan(document.body);
+      startObserver();
+    } else {
+      stopObserver();
+      restore();
+    }
+    toast(enabled ? '已开启中文补全' : '已关闭中文补全');
+  }
+
+  /* --------- 未翻译文案发现：便于扩充词典 --------- */
+
+  const NOISE_RE = /(https?:\/\/|\.(js|css|json|png|jpg|svg|html)\b|[\{\}<>=;\\\/@#]|^[A-Z0-9_.-]{1,4}$|[\u4e00-\u9fff\u3040-\u30ff])/i;
+
+  function collectUntranslated() {
+    const found = new Map();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    let node = walker.nextNode();
+    while (node) {
+      const parent = node.parentElement;
+      const raw = node.nodeValue;
+      if (raw && parent && !isSkipped(parent)) {
+        const t = normalize(raw);
+        if (t.length >= 2 && t.length <= 60 && /[A-Za-z]{2,}/.test(t) && !NOISE_RE.test(t)) {
+          const hasWord = t.split(/\s+/).some(function (w) {
+            return /^[A-Za-z][A-Za-z'’-]{1,}$/.test(w) && w.length > 2;
+          });
+          if (hasWord && !lookupExact(t) && !applyPhrases(t)) {
+            found.set(t, (found.get(t) || 0) + 1);
+          }
+        }
+      }
+      node = walker.nextNode();
+    }
+    const list = Array.from(found.entries()).sort(function (a, b) { return b[1] - a[1]; });
+    console.log('%c[Greasyfork 中文化补充] 本页疑似未翻译的英文文案：', 'font-weight:bold', list.length + ' 条');
+    console.table(list.map(function (e) { return { 英文原文: e[0], 出现次数: e[1] }; }));
+    const snippet = list.map(function (e) {
+      return "      ['" + e[0].replace(/'/g, "\\'") + "', '中文译文'],";
+    }).join('\n');
+    console.log('%c可直接粘贴到词典的格式：\n' + snippet, 'color:#888');
+    toast('已输出 ' + list.length + ' 条候选，请查看控制台（F12）');
+    return list;
+  }
+
+  /* --------- 轻量提示条 --------- */
+
+  function toast(msg) {
+    try {
+      const box = document.createElement('div');
+      box.textContent = msg;
+      box.setAttribute('style', [
+        'position:fixed', 'right:16px', 'bottom:16px', 'z-index:2147483647',
+        'background:rgba(0,0,0,.82)', 'color:#fff', 'padding:8px 14px',
+        'border-radius:6px', 'font:13px/1.5 system-ui,sans-serif',
+        'box-shadow:0 4px 14px rgba(0,0,0,.3)', 'transition:opacity .3s'
+      ].join(';'));
+      document.body.appendChild(box);
+      setTimeout(function () {
+        box.style.opacity = '0';
+        setTimeout(function () { box.remove(); }, 350);
+      }, 1800);
+    } catch (e) { /* 忽略 */ }
+  }
+
+  /* ============================ 启动 ============================ */
+
+  function init() {
+    try {
+      const saved = localStorage.getItem(STORE_KEY);
+      // 中文界面默认开启；英文界面默认不干预，用户可在菜单里强制开启
+      enabled = saved === null ? isChinesePage() : saved !== '0';
+    } catch (e) {
+      enabled = isChinesePage();
+    }
+
+    if (!enabled) {
+      console.log('[Greasyfork 中文化补充] 当前未启用（非中文界面或已手动关闭），可在脚本菜单中开启。');
+    }
+
+    if (enabled) {
+      scan(document.body);
+      startObserver();
+    }
+
+    if (typeof GM_registerMenuCommand === 'function') {
+      GM_registerMenuCommand('切换中文补全开关', function () { setEnabled(!enabled); });
+      GM_registerMenuCommand('重新扫描页面', function () {
+        records.length = 0;
+        scan(document.body);
+        toast('已重新扫描，替换 ' + (stats.text + stats.attr) + ' 处');
+      });
+      GM_registerMenuCommand('导出本页未翻译的英文文案（控制台）', collectUntranslated);
+      GM_registerMenuCommand('查看替换统计（控制台）', function () {
+        console.log('[Greasyfork 中文化补充]', { 文本: stats.text, 属性: stats.attr, 词典规模: EXACT.size });
+        toast('文本 ' + stats.text + ' 处，属性 ' + stats.attr + ' 处');
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
