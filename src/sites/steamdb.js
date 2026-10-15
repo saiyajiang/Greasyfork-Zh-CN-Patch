@@ -350,10 +350,22 @@ registerSite({
       rep: (_m, n, w) => (n ? '今年新增 ' + n.trim() + ' 个' : '个') +
         (SDB_WORD[w.toLowerCase()] || w) + (n ? '' : '今年新增')
     },
+    /* 相对时间。两条规则都不加 ^...$ 锚点：时间常嵌在更长的文本里
+       （如 'Game Music 5 minutes ago'），锚定后整句就匹配不上了。
+       数字常与单位分处不同元素，故数字部分一律设为可选。 */
     {
-      re: /^([\d,]+\s+)?(second|minute|hour|day|week|month|year)s?\s+ago$/i,
-      rep: (_m, n, unit) => (n ? n.trim() + ' ' : '') +
+      re: /\b(\d+|an?|a)\s+(second|minute|hour|day|week|month|year)s?\s+ago\b/i,
+      rep: (_m, n, unit) => (/^an?$/i.test(n) ? '1' : n) + ' ' +
         UNIT_MAP[unit.toLowerCase()] + '前'
+    },
+    {
+      re: /\b(second|minute|hour|day|week|month|year)s?\s+ago\b/i,
+      rep: (_m, unit) => UNIT_MAP[unit.toLowerCase()] + '前'
+    },
+    {
+      re: /\b(\d+|an?|a)\s+(second|minute|hour|day|week|month|year)s?\s+later\b/i,
+      rep: (_m, n, unit) => (/^an?$/i.test(n) ? '1' : n) + ' ' +
+        UNIT_MAP[unit.toLowerCase()] + '后'
     }
   ]
 });

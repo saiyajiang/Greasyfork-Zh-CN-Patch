@@ -202,6 +202,39 @@
     stats.text++;
   }
 
+  /* SteamDB 等站点用 <br> 折行，把 'Most Played<br>Games' 拆成两个
+     文本节点，逐节点匹配只译出前半截，留下 '最热玩 Games' 这种半吊子。
+     这里先把 <br> 当作空格拼回整句再查词典，命中则整体替换。 */
+  function tryBrJoined(node, parent) {
+    if (!parent.querySelector || !parent.querySelector('br')) return false;
+    let first = null;
+    let joined = '';
+    for (let c = parent.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) {
+        joined += c.nodeValue;
+        if (!first && c.nodeValue.trim()) first = c;
+      } else if (c.nodeType === 1) {
+        joined += (c.tagName === 'BR' ? ' ' : (c.textContent || ''));
+      }
+    }
+    if (first !== node) return false;           // 只由首节点触发，避免重复
+    const t = normalize(joined);
+    if (!t || t.length > 200) return false;
+
+    const next = translate(t, isUIElement(parent));
+    if (next === null || next === t) return false;
+
+    setText(node, wrapPreserve(node.nodeValue, next));
+    for (let c = parent.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3 && c !== node && c.nodeValue && c.nodeValue.trim()) {
+        records.push({ node: c, before: c.nodeValue });
+        seen.add(c);
+        c.nodeValue = '';
+      }
+    }
+    return true;
+  }
+
   function handleTextNode(node) {
     if (seen.has(node)) return;
     seen.add(node);
@@ -213,6 +246,8 @@
 
     const t = normalize(raw);
     if (!t) return;
+
+    if (tryBrJoined(node, parent)) return;
 
     const ui = isUIElement(parent);
     const next = translate(t, ui);

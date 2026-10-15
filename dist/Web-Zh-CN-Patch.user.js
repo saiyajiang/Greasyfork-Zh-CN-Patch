@@ -3,7 +3,7 @@
 // @name:zh-CN   Web 中文化补充
 // @name:en      Web Zh-CN Patch
 // @namespace    https://github.com/saiyajiang/Web-Zh-CN-Patch
-// @version      2.4.0
+// @version      2.4.1
 // @description  为多个英文站点补齐中文界面：目前支持 Greasy Fork（greasyfork.org / sleazyfork.org）、SteamDB（steamdb.info）。补全官方翻译中未收录、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 为多个英文站点补齐中文界面，补全官方翻译中未收录、漏翻的英文文案。本脚本由 AI 编写。
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.
@@ -251,6 +251,39 @@
     stats.text++;
   }
 
+  /* SteamDB 等站点用 <br> 折行，把 'Most Played<br>Games' 拆成两个
+     文本节点，逐节点匹配只译出前半截，留下 '最热玩 Games' 这种半吊子。
+     这里先把 <br> 当作空格拼回整句再查词典，命中则整体替换。 */
+  function tryBrJoined(node, parent) {
+    if (!parent.querySelector || !parent.querySelector('br')) return false;
+    let first = null;
+    let joined = '';
+    for (let c = parent.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) {
+        joined += c.nodeValue;
+        if (!first && c.nodeValue.trim()) first = c;
+      } else if (c.nodeType === 1) {
+        joined += (c.tagName === 'BR' ? ' ' : (c.textContent || ''));
+      }
+    }
+    if (first !== node) return false;           // 只由首节点触发，避免重复
+    const t = normalize(joined);
+    if (!t || t.length > 200) return false;
+
+    const next = translate(t, isUIElement(parent));
+    if (next === null || next === t) return false;
+
+    setText(node, wrapPreserve(node.nodeValue, next));
+    for (let c = parent.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3 && c !== node && c.nodeValue && c.nodeValue.trim()) {
+        records.push({ node: c, before: c.nodeValue });
+        seen.add(c);
+        c.nodeValue = '';
+      }
+    }
+    return true;
+  }
+
   function handleTextNode(node) {
     if (seen.has(node)) return;
     seen.add(node);
@@ -262,6 +295,8 @@
 
     const t = normalize(raw);
     if (!t) return;
+
+    if (tryBrJoined(node, parent)) return;
 
     const ui = isUIElement(parent);
     const next = translate(t, ui);
@@ -1702,10 +1737,22 @@ registerSite({
       rep: (_m, n, w) => (n ? '今年新增 ' + n.trim() + ' 个' : '个') +
         (SDB_WORD[w.toLowerCase()] || w) + (n ? '' : '今年新增')
     },
+    /* 相对时间。两条规则都不加 ^...$ 锚点：时间常嵌在更长的文本里
+       （如 'Game Music 5 minutes ago'），锚定后整句就匹配不上了。
+       数字常与单位分处不同元素，故数字部分一律设为可选。 */
     {
-      re: /^([\d,]+\s+)?(second|minute|hour|day|week|month|year)s?\s+ago$/i,
-      rep: (_m, n, unit) => (n ? n.trim() + ' ' : '') +
+      re: /\b(\d+|an?|a)\s+(second|minute|hour|day|week|month|year)s?\s+ago\b/i,
+      rep: (_m, n, unit) => (/^an?$/i.test(n) ? '1' : n) + ' ' +
         UNIT_MAP[unit.toLowerCase()] + '前'
+    },
+    {
+      re: /\b(second|minute|hour|day|week|month|year)s?\s+ago\b/i,
+      rep: (_m, unit) => UNIT_MAP[unit.toLowerCase()] + '前'
+    },
+    {
+      re: /\b(\d+|an?|a)\s+(second|minute|hour|day|week|month|year)s?\s+later\b/i,
+      rep: (_m, n, unit) => (/^an?$/i.test(n) ? '1' : n) + ' ' +
+        UNIT_MAP[unit.toLowerCase()] + '后'
     }
   ]
 });
@@ -1713,10 +1760,10 @@ registerSite({
 
   const site = pickSite();
   if (!site) {
-    console.log('[Web 中文化补充] v2.4.0 当前站点未适配：' + location.hostname);
+    console.log('[Web 中文化补充] v2.4.1 当前站点未适配：' + location.hostname);
     return;
   }
-  console.log('%c[Web 中文化补充] v2.4.0 · ' + site.name, 'font-weight:bold');
+  console.log('%c[Web 中文化补充] v2.4.1 · ' + site.name, 'font-weight:bold');
   boot(site);
 
 })();
