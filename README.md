@@ -51,10 +51,12 @@
 
 ## 词典来源
 
-- **SteamDB**：取自官方 Crowdin 项目（`SteamDatabase/BrowserExtension`）已 100% 完成的简体中文翻译，译法经官方审核，术语一致性有保障
+- **SteamDB**：取自官方 Crowdin 项目（`crowdin.com/project/steamdb-extension`）导出的 `_locales/zh_CN/messages.json`。官方页面显示**已翻译 100%、已批准 97%**——翻译全部完成，但约 30 个词仍处「已翻译未批准」状态（含 17 个自动翻译词），因此并非全部经过人工校对，少数词条单列在「存疑待复核」分组
 - **Greasy Fork**：对比官方仓库 `config/locales/en.yml` 与 `zh-CN.yml`，补全其中 53 个缺失 key 里页面可见的标题与短语
 
 > Greasy Fork 官方翻译托管在 **Transifex** 而非 Crowdin，因此直接对比仓库语言文件比查 Crowdin 更准确。
+
+各站点的官方进度请以平台显示为准：进度条 100% 指的是「已翻译」，不代表「已批准」。校对入口：Crowdin 项目 → 对应语言 → 筛选 `Translated, not approved`。
 
 ## 项目结构
 

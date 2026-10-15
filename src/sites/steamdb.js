@@ -2,10 +2,14 @@
  * SteamDB 词典
  * ------------------------------------------------------------------
  * 词条来源：
- *   1. 官方 Crowdin 项目（SteamDatabase/BrowserExtension）已 100% 完成的
- *      简体中文翻译，取自 _locales/zh_CN/messages.json —— 译法经过官方
- *      审核，术语一致性有保障，优先采用。
- *   2. 少量高置信度通用界面词，标记为「待验证」，遇到不通顺的请反馈。
+ *   1. 官方 Crowdin 项目（crowdin.com/project/steamdb-extension）导出的
+ *      _locales/zh_CN/messages.json。
+ *      注意：官方页面显示「已翻译 100%、已批准 97%」——翻译全部完成，
+ *      但仍有约 30 个词处于「已翻译未批准」状态（含 17 个自动翻译词），
+ *      因此这里并非全部经过人工校对，遇到不通顺的请反馈。
+ *      校对入口：crowdin.com/project/steamdb-extension → 简体中文 →
+ *      筛选 Translated, not approved
+ *   2. 少量高置信度通用界面词，单列在「通用界面（待验证）」分组。
  *
  * 补充新词：菜单「导出本页未翻译的英文文案」，把输出粘到对应分组即可。
  * ================================================================== */
@@ -28,7 +32,7 @@ registerSite({
   uiSelectors: '.header-menu, .footer, .tabnav, .page-header, .sidebar, .pagination, .btn-group, .btn',
 
   dictGroups: {
-    '官方术语（Crowdin 已确认）': [
+    '官方译文（Crowdin，100% 已翻译 / 97% 已批准）': [
       ['Search', '搜索'],
       ['Date', '日期'],
       ['Updated', '最近更新于'],
@@ -53,7 +57,6 @@ registerSite({
       ['All-time peak:', '历史峰值人数：'],
       ['Followers:', '关注数：'],
       ['SteamDB Rating:', 'SteamDB 好评率：'],
-      ['Hidden achievement:', '隐藏成就：'],
       ['Sort by time', '按解锁时间顺序'],
       ['No badge crafted', '徽章未合成'],
       ['Reveal spoilers', '显示隐藏文本'],
@@ -123,6 +126,12 @@ registerSite({
       ['Yesterday', '昨天'],
       ['Last 7 days', '近 7 天'],
       ['Last 30 days', '近 30 天']
+    ],
+
+    /* 译文存疑：残留英文标点等未精修痕迹，多半落在官方「未批准」的
+       那部分里。若你在 Crowdin 上确认了正确译法，欢迎回来修正。 */
+    '存疑待复核': [
+      ['Hidden achievement:', '隐藏成就：']
     ],
 
     '不翻译（白名单）': [
