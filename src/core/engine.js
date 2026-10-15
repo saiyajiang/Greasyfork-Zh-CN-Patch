@@ -465,6 +465,9 @@
         continue;
       }
 
+      // 站点标注的数据区（游戏名、开发商等）不翻译，导出时仅作记录
+      if (SITE.dataSelectors && host.closest && host.closest(SITE.dataSelectors)) continue;
+
       const text = inlineText(host);
       if (!text || !/[A-Za-z]{2,}/.test(text)) continue;
       out.push({
@@ -510,14 +513,27 @@
     return rows;
   }
 
+  /* 通用数据噪声：时间戳、数据库变更流水、署名等，各站点通用 */
+  const TIMESTAMP_RE = /^\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2}/;
+  const DBLOG_RE = /^\d{5,}\s+(?:New|Update|Delete)\b/;
+  const BYLINE_RE = /^By\s+[A-Za-z0-9]/;
+  const ORDINAL_DATE_RE = /^(?:Ends|Starts|Until)\s+\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+/;
+
   function classify(t) {
     if (CJK_RE.test(t)) return '已含中文（多半已翻译）';
-    if (PROTECT_RE.test(t)) return '受保护专名（Greasy Fork+）';
+    if (PROTECT_RE.test(t)) return '受保护专名（' + (SITE.protectLabel || SITE.name) + '）';
     if (SKIP_WORDS.has(t.toLowerCase())) return '专名/占位符（白名单）';
     if (PLACEHOLDER_RE.test(t)) return '占位符';
     if (FRAGMENT_RE.test(t.trim())) return '句子残片（被标签切断）';
     if (PURE_NOISE_RE.test(t)) return '纯 URL/路径';
     if (IDENTIFIER_RE.test(t)) return '疑似用户名/标识符';
+    if (TIMESTAMP_RE.test(t)) return '时间戳';
+    if (DBLOG_RE.test(t)) return '数据库变更流水';
+    if (BYLINE_RE.test(t)) return '发行商/作者署名';
+    if (ORDINAL_DATE_RE.test(t)) return '日期（可由正则处理）';
+    if (SITE.dataSkipRe && new RegExp(SITE.dataSkipRe, 'i').test(t)) {
+      return '站点数据区（' + SITE.name + '）';
+    }
     return null;
   }
 
