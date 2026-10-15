@@ -1,81 +1,102 @@
-# Greasyfork 中文化补充
+# Web 中文化补充
 
-一个用户脚本（Userscript），用于补全 [Greasyfork](https://greasyfork.org)（含 Sleazyfork）中文界面里**未翻译、漏翻的英文文案**：导航、按钮、表单、表头、提示、确认弹窗、时间与计数等。
+为多个英文站点补齐中文界面：补全官方翻译中**未收录、漏翻的英文文案**——导航、按钮、表单、表头、提示、确认弹窗、时间与计数等。
 
 > 本脚本由 AI 编写，词典译文仅供参考。发现错译、漏译欢迎提 Issue 或 PR。
 
+## 支持站点
+
+| 站点 | 域名 | 词条 | 默认行为 |
+| --- | --- | --- | --- |
+| Greasy Fork / Sleazy Fork | `greasyfork.org` `sleazyfork.org` | 431 | 中文界面下开启，英文界面不干预 |
+| SteamDB | `steamdb.info` | 101 | 进站即翻译 |
+
+未适配的域名脚本完全不运行。
+
 ## 安装
 
-安装 [Tampermonkey](https://www.tampermonkey.net/)、[Violentmonkey](https://violentmonkey.github.io/) 或 Greasemonkey 后：
-
-- 从 Greasyfork 或本仓库 Release 安装，或
-- 下载 [`Greasyfork-Zh-CN-Patch.user.js`](./Greasyfork-Zh-CN-Patch.user.js)，把内容直接粘贴进管理器的「新建脚本」。
+安装 [Tampermonkey](https://www.tampermonkey.net/)、[Violentmonkey](https://violentmonkey.github.io/) 或 Greasemonkey 后，从 Greasyfork 或本仓库 Release 安装。
 
 ## 功能
 
-- **词条替换**：约 380 条 UI 文案词典，覆盖导航与账号、列表排序、脚本详情、操作按钮、用户页面、提示状态、脚本集与 Webhook、语言名称八大类。
-- **正则补全**：`3 days ago` → `3 天前`、`1 of 10` → `1 / 10`、`25 results` → `25 个结果` 等带数字的文案。
-- **属性翻译**：搜索框 `placeholder`、`title`、`aria-label`、`alt`，以及 Rails 的 `data-confirm` 确认弹窗（`Are you sure?` → `确定吗？`）。
-- **动态内容**：MutationObserver 监听异步加载与局部刷新的内容。
-- **菜单开关**：可一键启用或停用，停用时会还原为原文，无需刷新。
-- **漏翻发现**：菜单「导出本页未翻译的英文文案」，把页面上仍是英文的 UI 文案输出成可直接粘贴的词典格式，方便扩充词库。
+- **词条替换**：532 条 UI 文案词典，按站点与界面分区组织
+- **正则补全**：`3 days ago` → `3 天前`、`1 of 10` → `1 / 10`、`1,234,567 players` → `1,234,567 名玩家`
+- **属性翻译**：`placeholder`、`title`、`aria-label`、`alt`、`data-confirm`，以及提交类按钮的 `value`
+- **动态内容**：MutationObserver 监听异步加载与局部刷新
+- **菜单开关**：一键启用 / 停用，停用后还原原文，无需刷新
+- **漏翻发现**：导出本页未翻译的英文文案，输出成可直接粘贴的词典格式
 
 ## 安全策略
 
-用户脚本站上有大量**用户创作内容**（脚本标题、简介、代码、评论），脚本对它们一律不改动：
+站点上有大量用户创作内容（脚本标题、游戏名、开发商、评论），脚本对它们一律不改动：
 
 1. 文本节点只有在**整段完全等于**某条英文词条时才替换；
 2. 短语级替换只在按钮、表单标签、表头、导航等 UI 元素内进行；
-3. `code` / `pre` / `textarea` / 脚本卡片 / 讨论与评论等区域整体跳过；
-4. 英文界面（`lang` 非中文）默认不干预，可通过菜单强制开启。
+3. `code` / `pre` / `textarea` 与各站点标注的数据区域整体跳过；
+4. 品牌名与第三方脚本名受硬保护（如 `Greasy Fork+` 是另一名作者的独立脚本，不翻译）。
 
-## 使用说明
-
-点击脚本管理器菜单（Tampermonkey 图标）可看到：
+## 菜单
 
 | 菜单项 | 作用 |
 | --- | --- |
 | 切换中文补全开关 | 一键启用 / 停用，停用后自动还原原文 |
 | 重新扫描页面 | 对已加载内容重新跑一遍替换 |
 | 导出本页未翻译的英文文案（控制台） | 输出漏翻文案，方便补词条 |
-| 查看替换统计（控制台） | 查看本次替换了多少处文本与属性 |
+| 导出全部英文原文（未过滤） | 用于核对「到底识别到了什么」 |
+| 查看替换统计（控制台） | 查看替换了多少处文本与属性 |
 
-## 扩充词典
+导出以「块级祖先」为单位取内联文本：链接嵌在句中不会被切成残片，与块级子元素混排的直接文本也不会整段丢失。断句时句号后必须跟空白或到结尾才切，`v2.0.6`、`github.com` 不会被拆坏。
 
-1. 打开任意 Greasyfork 页面，点击脚本菜单「导出本页未翻译的英文文案（控制台）」；
-2. 在控制台（F12）复制输出的 `['英文', '中文译文'],` 片段；
-3. 粘到脚本里 `DICT_GROUPS` 对应的分组中，填上译文，改 `@version` 后发布。
+导出结果分两张表：**建议翻译**与**已过滤**（附过滤原因）。备注列标注「含内联代码」「属性」「单词，可能无需翻译」。
 
-导出以「块级祖先」为单位取内联文本：链接嵌在句中不会被切成残片，与块级子元素混排的直接文本也不会整段丢失，说明文档正文同样覆盖（不会被 `markdown` 等容器漏掉）。断句时句号后必须跟空白或到结尾才切，因此 `v2.0.6`、`github.com` 不会被拆坏。
+## 词典来源
 
-除正文外，还会采集 `placeholder` / `title` / `aria-label` / `data-confirm` 以及提交类按钮的 `value`。
+- **SteamDB**：取自官方 Crowdin 项目（`SteamDatabase/BrowserExtension`）已 100% 完成的简体中文翻译，译法经官方审核，术语一致性有保障
+- **Greasy Fork**：对比官方仓库 `config/locales/en.yml` 与 `zh-CN.yml`，补全其中 53 个缺失 key 里页面可见的标题与短语
 
-菜单另有**「导出全部英文原文（未过滤）」**，用于核对「到底识别到了什么」——若某段英文连它都没列出，说明被代码区规则排除了，请反馈。
+> Greasy Fork 官方翻译托管在 **Transifex** 而非 Crowdin，因此直接对比仓库语言文件比查 Crowdin 更准确。
 
-导出结果分两张表：**建议翻译**与**已过滤**（附过滤原因：专有名词、第三方脚本名 `Greasy Fork+`、占位符 `YourRepoName`、用户名、被标签切断的句子残片、已含中文等）。若误判，可把词条加进「不翻译（白名单）」分组。
+## 项目结构
 
-含 `Greasy Fork+` 的文本受硬保护，无论多长都不会被改写，也不会出现在导出建议里——它是另一名作者的独立脚本，与本站无关，必须整体保留。
+```
+src/core/engine.js     # 引擎（站点无关）：采集、替换、观察器、导出
+src/sites/*.js         # 各站点词典，registerSite() 注册
+tools/build.js         # 合成 dist/Web-Zh-CN-Patch.user.js
+```
 
-备注列会标注「含内联代码」（原句嵌了 `<code>`，抽出后可能不完整，请对照页面确认原文）、「属性（placeholder/title 等）」、「单词，可能无需翻译」。
+词典分离、发布单文件——用户安装的仍是一个 `.user.js`。
 
-导出结果会尝试写入剪贴板（需 `GM_setClipboard` 授权），失败时仍可在控制台复制。
+### 本地构建
 
-**长句**请放进「整句」分组并给出完整译文——这类文案不在按钮、表头等 UI 元素内，靠整句精确匹配保证安全。
+```bash
+npm run build   # 生成 dist/Web-Zh-CN-Patch.user.js
+npm run check   # 只做语法与词典校验
+```
+
+### 新增站点
+
+在 `src/sites/` 下新建文件，`registerSite()` 里填 `id`、`name`、`hosts`、`dictGroups` 即可，构建脚本会自动合并 `@match` 与描述。
+
+| 字段 | 说明 |
+| --- | --- |
+| `defaultEnabled` | 布尔值或函数，决定该站是否默认开启 |
+| `protectRe` | 正则，命中的文本整段不动（品牌名等） |
+| `skipClassRe` | 正则，命中 class 的容器整体跳过（数据区） |
+| `uiSelectors` | 站内 UI 容器选择器，短语级替换在这些区域内放宽 |
+| `phrases` / `rules` | 短语与正则规则 |
 
 ## 上架 Greasyfork 后补充
 
-本仓库的 `@source` / `@homepageURL` 已指向 GitHub，但**自动更新需要补两条 metadata**（拿到脚本 ID 后填 XXXXXX）：
+拿到脚本 ID 后补两条 metadata，否则用户收不到更新推送：
 
 ```js
-// @downloadURL  https://greasyfork.org/scripts/XXXXXX-greasyfork/code/Greasyfork%20.user.js
-// @updateURL    https://greasyfork.org/scripts/XXXXXX-greasyfork/meta.js
+// @downloadURL  https://greasyfork.org/scripts/XXXXXX-web/code/Web%20.user.js
+// @updateURL    https://greasyfork.org/scripts/XXXXXX-web/meta.js
 ```
-
-否则用户不会收到更新推送。
 
 ## 更彻底的做法
 
-本站翻译由社区在 Crowdin 上维护，脚本只能做客户端补丁。遇到系统性漏翻，建议同时到官方翻译平台提交译法，让所有用户受益；本脚本定位是「官方翻译补齐前的临时补充」。
+脚本只能做客户端补丁。遇到系统性漏翻，建议同时到官方翻译平台提交译法（Greasy Fork 在 Transifex，SteamDB 在 Crowdin），让所有用户受益。
 
 ## 许可
 
