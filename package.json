@@ -1,6 +1,6 @@
 {
   "name": "web-zh-cn-patch",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "为多个英文站点补齐中文界面：导航、按钮、表单、表头、提示与确认弹窗等",
   "private": true,
   "scripts": {

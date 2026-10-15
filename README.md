@@ -92,14 +92,22 @@ npm run check   # 只做语法与词典校验
 | `uiSelectors` | 站内 UI 容器选择器，短语级替换在这些区域内放宽 |
 | `phrases` / `rules` | 短语与正则规则 |
 
-## 上架 Greasyfork 后补充
+## 自动更新
 
-拿到脚本 ID 后补两条 metadata，否则用户收不到更新推送：
+构建产物自带 `@downloadURL` 与 `@updateURL`（指向本仓库 `main` 分支的
+`dist/` 目录），Tampermonkey / Violentmonkey 可自动检测更新。
 
-```js
-// @downloadURL  https://greasyfork.org/scripts/XXXXXX-web/code/Web%20.user.js
-// @updateURL    https://greasyfork.org/scripts/XXXXXX-web/meta.js
+每次打开页面时控制台会打印一行：
+
 ```
+[Web 中文化补充] v2.1.1 · SteamDB
+```
+
+**确认版本请先看这一行**——若显示的版本号低于仓库最新版，说明浏览器
+跑的还是旧脚本。可在脚本管理器里点「检查更新」，或手动重装。
+
+> 若改从 Greasyfork 安装，请把两条 URL 换成 Greasyfork 的地址：
+> `https://greasyfork.org/scripts/XXXXXX/code/...user.js` 与 `.../meta.js`
 
 ## 更彻底的做法
 

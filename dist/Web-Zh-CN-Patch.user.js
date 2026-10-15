@@ -3,7 +3,7 @@
 // @name:zh-CN   Web 中文化补充
 // @name:en      Web Zh-CN Patch
 // @namespace    https://github.com/saiyajiang/Web-Zh-CN-Patch
-// @version      2.1.0
+// @version      2.1.1
 // @description  为多个英文站点补齐中文界面：目前支持 Greasy Fork（greasyfork.org / sleazyfork.org）、SteamDB（steamdb.info）。补全官方翻译中未收录、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 为多个英文站点补齐中文界面，补全官方翻译中未收录、漏翻的英文文案。本脚本由 AI 编写。
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.
@@ -15,6 +15,8 @@
 // @match        https://greasyfork.org/*
 // @match        https://sleazyfork.org/*
 // @match        https://steamdb.info/*
+// @downloadURL  https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.user.js
+// @updateURL    https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.meta.js
 // @run-at       document-idle
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
@@ -1637,9 +1639,10 @@ registerSite({
 
   const site = pickSite();
   if (!site) {
-    console.log('[Web 中文化补充] 当前站点未适配：' + location.hostname);
+    console.log('[Web 中文化补充] v2.1.1 当前站点未适配：' + location.hostname);
     return;
   }
+  console.log('%c[Web 中文化补充] v2.1.1 · ' + site.name, 'font-weight:bold');
   boot(site);
 
 })();

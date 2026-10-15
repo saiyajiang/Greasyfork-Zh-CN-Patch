@@ -57,6 +57,8 @@ function metadata(sites) {
 // @supportURL   https://github.com/saiyajiang/Web-Zh-CN-Patch/issues
 // @source       https://github.com/saiyajiang/Web-Zh-CN-Patch
 ${matchLines(sites)}
+// @downloadURL  https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.user.js
+// @updateURL    https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.meta.js
 // @run-at       document-idle
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
@@ -144,9 +146,10 @@ const banner = `
 const boot = `
   const site = pickSite();
   if (!site) {
-    console.log('[${NAME}] 当前站点未适配：' + location.hostname);
+    console.log('[${NAME}] v${VERSION} 当前站点未适配：' + location.hostname);
     return;
   }
+  console.log('%c[${NAME}] v${VERSION} · ' + site.name, 'font-weight:bold');
   boot(site);
 `;
 
@@ -174,3 +177,8 @@ if (!fs.existsSync(DIST)) fs.mkdirSync(DIST, { recursive: true });
 const target = path.join(DIST, 'Web-Zh-CN-Patch.user.js');
 fs.writeFileSync(target, out, 'utf8');
 console.log('已生成 ' + path.relative(ROOT, target) + ' (' + out.length + ' 字节)');
+
+// 仅含元数据的轻量文件，Tampermonkey 检查更新时不必下载整个脚本
+const metaTarget = path.join(DIST, 'Web-Zh-CN-Patch.meta.js');
+fs.writeFileSync(metaTarget, metadata(sites) + '\n', 'utf8');
+console.log('已生成 ' + path.relative(ROOT, metaTarget));
