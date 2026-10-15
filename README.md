@@ -93,6 +93,15 @@ npm run check   # 只做语法与词典校验
 | `uiSelectors` | 站内 UI 容器选择器，短语级替换在这些区域内放宽 |
 | `phrases` / `rules` | 短语与正则规则 |
 
+## 图标
+
+脚本在油猴管理器列表里显示蓝底「文」字图标。图标以 **data URI 内联**
+在 metadata 里，不依赖外网——国内访问 `raw.githubusercontent.com` 时常
+不稳定，外链图标容易加载失败。
+
+原图在 `assets/icon.png`（64×64）。上架 Greasyfork 时可在脚本页面上传
+同一文件，获得更清晰的展示效果。
+
 ## 自动更新
 
 构建产物自带 `@downloadURL` 与 `@updateURL`（指向本仓库 `main` 分支的

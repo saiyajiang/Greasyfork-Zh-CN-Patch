@@ -41,6 +41,15 @@ function siteList(sites) {
   return Array.from(m.entries()).map(([n, h]) => `${n}（${h}）`).join('、');
 }
 
+function iconDataUri() {
+  // 图标内联为 data URI：不依赖外网，国内访问 raw.githubusercontent.com
+  // 不稳定时也能正常显示。assets/icon.png 供 Greasyfork 上架时上传。
+  const p = path.join(ROOT, 'assets', 'icon.png');
+  if (!fs.existsSync(p)) return '';
+  const b64 = fs.readFileSync(p).toString('base64');
+  return '// @icon         data:image/png;base64,' + b64;
+}
+
 function metadata(sites) {
   return `// ==UserScript==
 // @name         ${NAME}
@@ -53,6 +62,7 @@ function metadata(sites) {
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.
 // @author       saiyajiang
 // @license      MIT
+${iconDataUri()}
 // @homepageURL  https://github.com/saiyajiang/Web-Zh-CN-Patch
 // @supportURL   https://github.com/saiyajiang/Web-Zh-CN-Patch/issues
 // @source       https://github.com/saiyajiang/Web-Zh-CN-Patch
