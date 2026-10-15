@@ -3,7 +3,7 @@
 // @name:zh-CN   Web 中文化补充
 // @name:en      Web Zh-CN Patch
 // @namespace    https://github.com/saiyajiang/Web-Zh-CN-Patch
-// @version      2.1.1
+// @version      2.2.0
 // @description  为多个英文站点补齐中文界面：目前支持 Greasy Fork（greasyfork.org / sleazyfork.org）、SteamDB（steamdb.info）。补全官方翻译中未收录、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 为多个英文站点补齐中文界面，补全官方翻译中未收录、漏翻的英文文案。本脚本由 AI 编写。
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.

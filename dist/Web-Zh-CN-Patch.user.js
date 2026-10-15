@@ -3,7 +3,7 @@
 // @name:zh-CN   Web 中文化补充
 // @name:en      Web Zh-CN Patch
 // @namespace    https://github.com/saiyajiang/Web-Zh-CN-Patch
-// @version      2.1.1
+// @version      2.2.0
 // @description  为多个英文站点补齐中文界面：目前支持 Greasy Fork（greasyfork.org / sleazyfork.org）、SteamDB（steamdb.info）。补全官方翻译中未收录、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 为多个英文站点补齐中文界面，补全官方翻译中未收录、漏翻的英文文案。本脚本由 AI 编写。
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.
@@ -107,6 +107,11 @@
      整段不做任何改动，避免被当作 'Greasy Fork' 拆开或被短语规则局部命中。
      注意只匹配带 + 的形式，否则会误伤含站名的正常句子（如 Webhook 提示句）。 */
   const PROTECT_RE = new RegExp(SITE.protectRe || '$^', 'i');
+  /* hard（默认）：含受保护专名的整段一律不动，适用于第三方脚本名这类
+     必须整体保留的文本（如 Greasy Fork+）。
+     soft：品牌名只保证自身不被译，含品牌名的句子照常翻译
+     （如 'SteamDB is not affiliated with...'），适用于站点自己的品牌。 */
+  const PROTECT_HARD = (SITE.protectMode || 'hard') === 'hard';
 
   const SKIP_TAGS = new Set([
     'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE', 'TITLE',
@@ -212,7 +217,7 @@
     if (!t) return null;
 
     // 硬保护：含受保护专名的文本一律不动，避免被拆开或局部替换
-    if (PROTECT_RE.test(t)) return null;
+    if (PROTECT_HARD && PROTECT_RE.test(t)) return null;
 
     let r = applyRules(t, false);
     if (r !== null) return r;
@@ -569,7 +574,10 @@
 
   function classify(t) {
     if (CJK_RE.test(t)) return '已含中文（多半已翻译）';
-    if (PROTECT_RE.test(t)) return '受保护专名（' + (SITE.protectLabel || SITE.name) + '）';
+    // 软保护下含品牌名的句子照常列入建议，译文里保留品牌名即可
+    if (PROTECT_HARD && PROTECT_RE.test(t)) {
+      return '受保护专名（' + (SITE.protectLabel || SITE.name) + '）';
+    }
     if (SKIP_WORDS.has(t.toLowerCase())) return '专名/占位符（白名单）';
     if (PLACEHOLDER_RE.test(t)) return '占位符';
     if (FRAGMENT_RE.test(t.trim())) return '句子残片（被标签切断）';
@@ -1366,8 +1374,9 @@ registerSite({
   /* SteamDB 无官方中文界面，进站即翻译 */
   defaultEnabled: true,
 
-  /* 品牌名与第三方站名不翻译 */
+  /* 品牌名：自身不翻译，但含品牌名的句子照常翻译（软保护） */
   protectRe: 'steamdb',
+  protectMode: 'soft',
   protectLabel: 'SteamDB',
 
   /* 游戏名、开发商、发行商、包名等数据内容不翻译 */
@@ -1491,6 +1500,27 @@ registerSite({
       ['Frequently asked questions', '常见问题']
     ],
 
+    /* Tools 组：此前只补了首页板块，Tools 下这几项漏了 */
+    '工具与数据库': [
+      ['Patch notes', '补丁说明'],
+      ['Tags', '标签'],
+      ['Database', '数据库'],
+      ['Developers', '开发商'],
+      ['Publishers', '发行商'],
+      ['Game tags', '游戏标签'],
+      ['Engines & technologies', '引擎与技术'],
+      ['Change history', '变更历史']
+    ],
+
+    /* 含品牌名的整句：品牌名保留原文，句子其余部分正常翻译。
+       需要 protectMode 为 soft 才会生效。 */
+    '含 SteamDB 的整句': [
+      ['SteamDB is not affiliated with Valve or Steam.', 'SteamDB 与 Valve 或 Steam 没有隶属关系。'],
+      ['SteamDB is a free, independent database covering the entire Steam catalog.', 'SteamDB 是一个免费、独立的数据库，涵盖 Steam 全部目录。'],
+      ['Trending on SteamDB', 'SteamDB 热门趋势'],
+      ['SteamDB in numbers', 'SteamDB 数据一览']
+    ],
+
     '搜索与无障碍标签': [
       ['Toggle menu', '切换菜单'],
       ['Perform search', '执行搜索'],
@@ -1510,7 +1540,10 @@ registerSite({
       ['Use escape ( Esc ) to close search', '按 Esc 关闭搜索'],
       ['Enter an appid to be redirected to the app page', '输入 appid 可跳转到应用页面'],
       ['Enter Submit to view all results.', '按回车查看全部结果。'],
-      ['Ctrl+Enter View and filter in instant search.', 'Ctrl+Enter 在即时搜索中查看并筛选。']
+      ['Ctrl+Enter View and filter in instant search.', 'Ctrl+Enter 在即时搜索中查看并筛选。'],
+      /* <kbd> 标签会把提示拆成若干段，逐段也要能命中 */
+      ['toggle this menu', '切换菜单'],
+      ['focus search', '聚焦搜索']
     ],
 
     '通用界面（待验证）': [
@@ -1597,6 +1630,8 @@ registerSite({
 
   /* 短语级替换：只在 UI 元素内生效 */
   phrases: [
+    ['toggle this menu', '切换菜单'],
+    ['focus search', '聚焦搜索'],
     ['Sort by', '排序方式'],
     ['Show more', '显示更多'],
     ['Read more', '阅读更多'],
@@ -1639,10 +1674,10 @@ registerSite({
 
   const site = pickSite();
   if (!site) {
-    console.log('[Web 中文化补充] v2.1.1 当前站点未适配：' + location.hostname);
+    console.log('[Web 中文化补充] v2.2.0 当前站点未适配：' + location.hostname);
     return;
   }
-  console.log('%c[Web 中文化补充] v2.1.1 · ' + site.name, 'font-weight:bold');
+  console.log('%c[Web 中文化补充] v2.2.0 · ' + site.name, 'font-weight:bold');
   boot(site);
 
 })();

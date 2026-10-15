@@ -31,8 +31,9 @@ registerSite({
   /* SteamDB 无官方中文界面，进站即翻译 */
   defaultEnabled: true,
 
-  /* 品牌名与第三方站名不翻译 */
+  /* 品牌名：自身不翻译，但含品牌名的句子照常翻译（软保护） */
   protectRe: 'steamdb',
+  protectMode: 'soft',
   protectLabel: 'SteamDB',
 
   /* 游戏名、开发商、发行商、包名等数据内容不翻译 */
@@ -156,6 +157,27 @@ registerSite({
       ['Frequently asked questions', '常见问题']
     ],
 
+    /* Tools 组：此前只补了首页板块，Tools 下这几项漏了 */
+    '工具与数据库': [
+      ['Patch notes', '补丁说明'],
+      ['Tags', '标签'],
+      ['Database', '数据库'],
+      ['Developers', '开发商'],
+      ['Publishers', '发行商'],
+      ['Game tags', '游戏标签'],
+      ['Engines & technologies', '引擎与技术'],
+      ['Change history', '变更历史']
+    ],
+
+    /* 含品牌名的整句：品牌名保留原文，句子其余部分正常翻译。
+       需要 protectMode 为 soft 才会生效。 */
+    '含 SteamDB 的整句': [
+      ['SteamDB is not affiliated with Valve or Steam.', 'SteamDB 与 Valve 或 Steam 没有隶属关系。'],
+      ['SteamDB is a free, independent database covering the entire Steam catalog.', 'SteamDB 是一个免费、独立的数据库，涵盖 Steam 全部目录。'],
+      ['Trending on SteamDB', 'SteamDB 热门趋势'],
+      ['SteamDB in numbers', 'SteamDB 数据一览']
+    ],
+
     '搜索与无障碍标签': [
       ['Toggle menu', '切换菜单'],
       ['Perform search', '执行搜索'],
@@ -175,7 +197,10 @@ registerSite({
       ['Use escape ( Esc ) to close search', '按 Esc 关闭搜索'],
       ['Enter an appid to be redirected to the app page', '输入 appid 可跳转到应用页面'],
       ['Enter Submit to view all results.', '按回车查看全部结果。'],
-      ['Ctrl+Enter View and filter in instant search.', 'Ctrl+Enter 在即时搜索中查看并筛选。']
+      ['Ctrl+Enter View and filter in instant search.', 'Ctrl+Enter 在即时搜索中查看并筛选。'],
+      /* <kbd> 标签会把提示拆成若干段，逐段也要能命中 */
+      ['toggle this menu', '切换菜单'],
+      ['focus search', '聚焦搜索']
     ],
 
     '通用界面（待验证）': [
@@ -262,6 +287,8 @@ registerSite({
 
   /* 短语级替换：只在 UI 元素内生效 */
   phrases: [
+    ['toggle this menu', '切换菜单'],
+    ['focus search', '聚焦搜索'],
     ['Sort by', '排序方式'],
     ['Show more', '显示更多'],
     ['Read more', '阅读更多'],

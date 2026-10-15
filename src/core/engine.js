@@ -59,6 +59,11 @@
      整段不做任何改动，避免被当作 'Greasy Fork' 拆开或被短语规则局部命中。
      注意只匹配带 + 的形式，否则会误伤含站名的正常句子（如 Webhook 提示句）。 */
   const PROTECT_RE = new RegExp(SITE.protectRe || '$^', 'i');
+  /* hard（默认）：含受保护专名的整段一律不动，适用于第三方脚本名这类
+     必须整体保留的文本（如 Greasy Fork+）。
+     soft：品牌名只保证自身不被译，含品牌名的句子照常翻译
+     （如 'SteamDB is not affiliated with...'），适用于站点自己的品牌。 */
+  const PROTECT_HARD = (SITE.protectMode || 'hard') === 'hard';
 
   const SKIP_TAGS = new Set([
     'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE', 'TITLE',
@@ -164,7 +169,7 @@
     if (!t) return null;
 
     // 硬保护：含受保护专名的文本一律不动，避免被拆开或局部替换
-    if (PROTECT_RE.test(t)) return null;
+    if (PROTECT_HARD && PROTECT_RE.test(t)) return null;
 
     let r = applyRules(t, false);
     if (r !== null) return r;
@@ -521,7 +526,10 @@
 
   function classify(t) {
     if (CJK_RE.test(t)) return '已含中文（多半已翻译）';
-    if (PROTECT_RE.test(t)) return '受保护专名（' + (SITE.protectLabel || SITE.name) + '）';
+    // 软保护下含品牌名的句子照常列入建议，译文里保留品牌名即可
+    if (PROTECT_HARD && PROTECT_RE.test(t)) {
+      return '受保护专名（' + (SITE.protectLabel || SITE.name) + '）';
+    }
     if (SKIP_WORDS.has(t.toLowerCase())) return '专名/占位符（白名单）';
     if (PLACEHOLDER_RE.test(t)) return '占位符';
     if (FRAGMENT_RE.test(t.trim())) return '句子残片（被标签切断）';
