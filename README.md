@@ -9,7 +9,7 @@
 | 站点 | 域名 | 词条 | 默认行为 |
 | --- | --- | --- | --- |
 | Greasy Fork / Sleazy Fork | `greasyfork.org` `sleazyfork.org` | 431 | 中文界面下开启，英文界面不干预 |
-| SteamDB | `steamdb.info` | 199 | 进站即翻译 |
+| SteamDB | `steamdb.info` | 213 | 进站即翻译 |
 
 未适配的域名脚本完全不运行。
 
@@ -19,7 +19,7 @@
 
 ## 功能
 
-- **词条替换**：630 条 UI 文案词典，按站点与界面分区组织
+- **词条替换**：644 条 UI 文案词典，按站点与界面分区组织
 - **正则补全**：`3 days ago` → `3 天前`、`1 of 10` → `1 / 10`、`1,234,567 players` → `1,234,567 名玩家`
 - **属性翻译**：`placeholder`、`title`、`aria-label`、`alt`、`data-confirm`，以及提交类按钮的 `value`
 - **动态内容**：MutationObserver 监听异步加载与局部刷新
@@ -33,7 +33,9 @@
 1. 文本节点只有在**整段完全等于**某条英文词条时才替换；
 2. 短语级替换只在按钮、表单标签、表头、导航等 UI 元素内进行；
 3. `code` / `pre` / `textarea` 与各站点标注的数据区域整体跳过；
-4. 品牌名与第三方脚本名受保护：站点自有品牌用软保护（`SteamDB is not affiliated with...` 照常翻译，品牌名保留原文）；第三方脚本名用硬保护（`Greasy Fork+` 整段不动）。
+4. 数量与单位常被拆在不同元素里（`<span>564k</span> apps in database`），正则的数字部分设为可选，拆分和完整两种形态都能命中。
+
+5. 品牌名与第三方脚本名受保护：站点自有品牌用软保护（`SteamDB is not affiliated with...` 照常翻译，品牌名保留原文）；第三方脚本名用硬保护（`Greasy Fork+` 整段不动）。
 
 ## 菜单
 
@@ -50,6 +52,8 @@
 导出结果分两张表：**建议翻译**与**已过滤**（附过滤原因）。备注列标注「含内联代码」「属性」「单词，可能无需翻译」。
 
 通用噪声（时间戳、数据库变更流水、`By xxx` 署名、序号日期）与各站点的 `dataSelectors` / `dataSkipRe` 会自动过滤，游戏名、开发商等数据不会进入建议列表。
+
+备注列会标注「替换区外（被站点 skipClassRe 排除）」——词典里明明有、页面上却不生效的，多半是命中了 `skipClassRe` 被整块跳过，照着这条排查即可。
 
 ## 词典来源
 
@@ -89,7 +93,7 @@ npm run check   # 只做语法与词典校验
 | `protectLabel` | 导出时「受保护专名」原因里显示的站名 |
 | `dataSelectors` | 选择器，命中则视为数据区，不翻译也不建议 |
 | `dataSkipRe` | 正则，命中的文本视为数据噪声 |
-| `skipClassRe` | 正则，命中 class 的容器整体跳过（数据区） |
+| `skipClassRe` | 正则，命中 class 的容器整体跳过。**只写数据内容的专属类名**，切勿写 `table-hover`、`chart` 这类通用词——Bootstrap 表格都带 `table-hover`，图表页容器普遍带 `chart`，写进去会让整页（尤其表头）不翻译 |
 | `uiSelectors` | 站内 UI 容器选择器，短语级替换在这些区域内放宽 |
 | `phrases` / `rules` | 短语与正则规则 |
 

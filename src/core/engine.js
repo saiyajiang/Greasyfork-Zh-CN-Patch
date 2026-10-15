@@ -465,7 +465,7 @@
           if (isExportSkipped(child)) continue;
           const ct = inlineText(child);
           if (!ct || !/[A-Za-z]{2,}/.test(ct)) continue;
-          out.push({ text: ct, ui: true, inline: false });
+          out.push({ text: ct, ui: true, inline: false, host: child });
         }
         continue;
       }
@@ -478,7 +478,8 @@
       out.push({
         text: text,
         ui: isUIElement(host),
-        inline: !!(host.querySelector && host.querySelector('code, pre'))
+        inline: !!(host.querySelector && host.querySelector('code, pre')),
+        host: host
       });
     }
 
@@ -512,7 +513,7 @@
     const rows = [];
     items.forEach(function (it) {
       splitSentences(it.text).forEach(function (s) {
-        rows.push({ text: s, ui: it.ui, inline: it.inline, attr: it.attr });
+        rows.push({ text: s, ui: it.ui, inline: it.inline, attr: it.attr, host: it.host });
       });
     });
     return rows;
@@ -551,6 +552,13 @@
     if (r.inline) n.push('含内联代码，原文可能不完整');
     if (!/\s/.test(r.text)) n.push('单词，可能无需翻译');
     return n.join('；');
+  }
+
+  /* 词典里明明有、页面上却不生效，多半是命中了 skipClassRe 被整块跳过。
+     导出时标出来，免得对着「已能翻译」的假象反复排查。 */
+  function blockedNote(host) {
+    if (!host || host.nodeType !== 1) return '';
+    return isSkipped(host) ? '；替换区外（被站点 skipClassRe 排除）' : '';
   }
 
   function fmtList(list) {
@@ -593,7 +601,7 @@
         skipped.set(t, { why: why, count: (prev ? prev.count : 0) + 1 });
       } else {
         const prev = todo.get(t);
-        todo.set(t, { count: (prev ? prev.count : 0) + 1, note: note(r) });
+        todo.set(t, { count: (prev ? prev.count : 0) + 1, note: note(r) + blockedNote(r.host) });
       }
     });
 

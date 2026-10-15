@@ -3,7 +3,7 @@
 // @name:zh-CN   Web 中文化补充
 // @name:en      Web Zh-CN Patch
 // @namespace    https://github.com/saiyajiang/Web-Zh-CN-Patch
-// @version      2.3.0
+// @version      2.4.0
 // @description  为多个英文站点补齐中文界面：目前支持 Greasy Fork（greasyfork.org / sleazyfork.org）、SteamDB（steamdb.info）。补全官方翻译中未收录、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 为多个英文站点补齐中文界面，补全官方翻译中未收录、漏翻的英文文案。本脚本由 AI 编写。
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.
@@ -514,7 +514,7 @@
           if (isExportSkipped(child)) continue;
           const ct = inlineText(child);
           if (!ct || !/[A-Za-z]{2,}/.test(ct)) continue;
-          out.push({ text: ct, ui: true, inline: false });
+          out.push({ text: ct, ui: true, inline: false, host: child });
         }
         continue;
       }
@@ -527,7 +527,8 @@
       out.push({
         text: text,
         ui: isUIElement(host),
-        inline: !!(host.querySelector && host.querySelector('code, pre'))
+        inline: !!(host.querySelector && host.querySelector('code, pre')),
+        host: host
       });
     }
 
@@ -561,7 +562,7 @@
     const rows = [];
     items.forEach(function (it) {
       splitSentences(it.text).forEach(function (s) {
-        rows.push({ text: s, ui: it.ui, inline: it.inline, attr: it.attr });
+        rows.push({ text: s, ui: it.ui, inline: it.inline, attr: it.attr, host: it.host });
       });
     });
     return rows;
@@ -600,6 +601,13 @@
     if (r.inline) n.push('含内联代码，原文可能不完整');
     if (!/\s/.test(r.text)) n.push('单词，可能无需翻译');
     return n.join('；');
+  }
+
+  /* 词典里明明有、页面上却不生效，多半是命中了 skipClassRe 被整块跳过。
+     导出时标出来，免得对着「已能翻译」的假象反复排查。 */
+  function blockedNote(host) {
+    if (!host || host.nodeType !== 1) return '';
+    return isSkipped(host) ? '；替换区外（被站点 skipClassRe 排除）' : '';
   }
 
   function fmtList(list) {
@@ -642,7 +650,7 @@
         skipped.set(t, { why: why, count: (prev ? prev.count : 0) + 1 });
       } else {
         const prev = todo.get(t);
-        todo.set(t, { count: (prev ? prev.count : 0) + 1, note: note(r) });
+        todo.set(t, { count: (prev ? prev.count : 0) + 1, note: note(r) + blockedNote(r.host) });
       }
     });
 
@@ -1380,11 +1388,14 @@ registerSite({
   protectMode: 'soft',
   protectLabel: 'SteamDB',
 
-  /* 游戏名、开发商、发行商、包名等数据内容不翻译 */
-  skipClassRe: 'app-name|game-name|app-title|package-name|developer|publisher|table-hover|chart|graph|highcharts|code',
+  /* 注意：这里只列「数据内容」的专属类名，绝不能写 table-hover、chart
+     这类通用词 —— Bootstrap 表格一律带 table-hover，/charts/ 页面容器
+     普遍带 chart，写进去会导致整页（尤其是表头）被整块跳过不翻译。
+     表头靠 UI_TAGS（TH）判定为界面元素，游戏名因不在词典里天然安全。 */
+  skipClassRe: 'app-name|game-name|app-title|package-name|developer|publisher|highcharts-container|code',
 
   /* 数据区：内部文本视为数据，不翻译也不建议翻译 */
-  dataSelectors: '.app-name, .game-name, .app-title, .home-game, .chart, .highcharts-container, [class*="leaderboard"]',
+  dataSelectors: '.app-name, .game-name, .app-title, .home-game, .highcharts-container, [class*="leaderboard"]',
 
   /* 文本级的数据噪声：数据库流水、署名等 */
   dataSkipRe: '^(?:\\d{5,}\\s+(?:New|Update|Delete)\\b|By\\s+[A-Za-z0-9])',
@@ -1497,6 +1508,10 @@ registerSite({
       ['View more app history entries…', '查看更多应用历史…'],
       ['View more package history entries…', '查看更多包历史…'],
       ['Swipe right on a game to view details.', '向右滑动游戏查看详情。'],
+      ['Trending Games', '趋势游戏'],
+      ['Popular Releases', '热门新发售'],
+      ['Hot Releases', '热门发售'],
+      ['Browse all deals', '浏览全部优惠'],
       ['Getting Started with Steam Hardware', 'Steam 硬件入门'],
       ['Frequently asked questions', '常见问题']
     ],
@@ -1545,6 +1560,20 @@ registerSite({
       /* <kbd> 标签会把提示拆成若干段，逐段也要能命中 */
       ['toggle this menu', '切换菜单'],
       ['focus search', '聚焦搜索']
+    ],
+
+    /* /charts/ 在线人数页 */
+    'Charts 页': [
+      ['Concurrent Steam Users', 'Steam 同时在线用户'],
+      ['Most played games', '游玩人数最多的游戏'],
+      ['Rank', '排名'],
+      ['Current', '当前'],
+      ['All-Time Peak', '历史峰值'],
+      ['High-resolution Steam charts with concurrent player counts for all Steam games, including historic data.', '高精度 Steam 在线人数图表，覆盖全部 Steam 游戏，含历史数据。'],
+      ['We update data and charts for the current top thousand games every 5 minutes, and the rest every 10 minutes.', '当前排名前一千的游戏每 5 分钟更新一次数据与图表，其余每 10 分钟更新。'],
+      ['Table is only showing games with 1K current players, or 10K peak.', '表格仅显示当前在线 1K 以上或峰值 10K 以上的游戏。'],
+      ['Sign in to view full table, or search for a game in the navbar.', '登录后查看完整表格，或在顶部导航栏搜索游戏。'],
+      ['High-resolution Steam charts', '高精度 Steam 图表']
     ],
 
     '通用界面（待验证）': [
@@ -1661,13 +1690,22 @@ registerSite({
       re: /^Ends\s+(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)$/i,
       rep: (_m, d, mon) => (SDB_MONTH[mon.toLowerCase()] || mon) + '月' + d + '日结束'
     },
+    /* 数量常与单位拆在不同元素里（<span>564k</span> apps in database），
+       数字部分设为可选，缺失时译文接在前一个数字后面读也通顺。 */
     {
-      re: /^([\d.,]+)\s*([kM]?)\s+(\w+)\s+in\s+database$/i,
-      rep: (_m, n, u, w) => '数据库中有 ' + n + u + ' 个' + (SDB_WORD[w.toLowerCase()] || w)
+      re: /^([\d.,]+\s*[kM]?\s+)?(\w+)\s+in\s+database$/i,
+      rep: (_m, n, w) => (n ? '数据库中有 ' + n.trim() + ' 个' : '个') +
+        (SDB_WORD[w.toLowerCase()] || w) + (n ? '' : '在数据库中')
     },
     {
-      re: /^([\d.,]+)\s*([kM]?)\s+(\w+)\s+this\s+year$/i,
-      rep: (_m, n, u, w) => '今年新增 ' + n + u + ' 个' + (SDB_WORD[w.toLowerCase()] || w)
+      re: /^([\d.,]+\s*[kM]?\s+)?(\w+)\s+this\s+year$/i,
+      rep: (_m, n, w) => (n ? '今年新增 ' + n.trim() + ' 个' : '个') +
+        (SDB_WORD[w.toLowerCase()] || w) + (n ? '' : '今年新增')
+    },
+    {
+      re: /^([\d,]+\s+)?(second|minute|hour|day|week|month|year)s?\s+ago$/i,
+      rep: (_m, n, unit) => (n ? n.trim() + ' ' : '') +
+        UNIT_MAP[unit.toLowerCase()] + '前'
     }
   ]
 });
@@ -1675,10 +1713,10 @@ registerSite({
 
   const site = pickSite();
   if (!site) {
-    console.log('[Web 中文化补充] v2.3.0 当前站点未适配：' + location.hostname);
+    console.log('[Web 中文化补充] v2.4.0 当前站点未适配：' + location.hostname);
     return;
   }
-  console.log('%c[Web 中文化补充] v2.3.0 · ' + site.name, 'font-weight:bold');
+  console.log('%c[Web 中文化补充] v2.4.0 · ' + site.name, 'font-weight:bold');
   boot(site);
 
 })();
