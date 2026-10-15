@@ -225,12 +225,25 @@
   /* SteamDB 等站点用 <br> 折行，把 'Most Played<br>Games' 拆成两个
      文本节点，逐节点匹配只译出前半截，留下 '最热玩 Games' 这种半吊子。
      这里先把 <br> 当作空格拼回整句再查词典，命中则整体替换。 */
+  /* 只有这类元素才做折行合并。表头、标签、按钮的折行纯粹是为了排版，
+     拼回去不影响语义；而侧边导航那种容器里塞着十几个 <a>，一旦命中
+     词典就会把整列塌成一行，直接错位。 */
+  const BR_JOIN_TAGS = new Set([
+    'TH', 'TD', 'LABEL', 'BUTTON', 'SUMMARY', 'CAPTION', 'FIGCAPTION',
+    'DT', 'DD', 'OPTION', 'LEGEND', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'
+  ]);
+
   function tryBrJoined(node, parent) {
     if (!parent.querySelector || !parent.querySelector('br')) return false;
+    if (!BR_JOIN_TAGS.has(parent.tagName)) return false;
+    if (parent.children.length > 1) return false;   // 除 <br> 外不许有其他子元素
+
     let first = null;
     let joined = '';
+    let textCount = 0;
     for (let c = parent.firstChild; c; c = c.nextSibling) {
       if (c.nodeType === 3) {
+        if (c.nodeValue.trim()) textCount++;
         joined += c.nodeValue;
         if (!first && c.nodeValue.trim()) first = c;
       } else if (c.nodeType === 1) {
@@ -238,8 +251,9 @@
       }
     }
     if (first !== node) return false;           // 只由首节点触发，避免重复
+    if (textCount > 3) return false;
     const t = normalize(joined);
-    if (!t || t.length > 200) return false;
+    if (!t || t.length > 60) return false;      // 短标签才合并，长段落不碰
 
     const next = translate(t, isUIElement(parent));
     if (next === null || next === t) return false;

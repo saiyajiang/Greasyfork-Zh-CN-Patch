@@ -246,6 +246,16 @@ registerSite({
       ['Football (American)', '橄榄球（美式）']
     ],
 
+    /* /app/{appid}/ 游戏详情页 */
+    '游戏详情页': [
+      ['DLCs', 'DLC'],
+      ['Store info', '商店信息'],
+      ['Depots', '文件包'],
+      ['Packages', '软件包'],
+      ['Initializing price history graph…', '正在初始化价格历史图表…'],
+      ['This game is excluded from Steam Family Sharing because: The publisher has marked this game as ineligible', '此游戏不支持 Steam 家庭共享，原因：发行商已将其标记为不符合资格']
+    ],
+
     '通用界面（待验证）': [
       ['Apps', '应用'],
       ['App Info', '应用信息'],
