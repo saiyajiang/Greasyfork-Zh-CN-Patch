@@ -4,12 +4,20 @@
 
 > 本脚本由 AI 编写，词典译文仅供参考。发现错译、漏译欢迎提 Issue 或 PR。
 
+## 安装
+
+- **Greasyfork（推荐）**：https://greasyfork.org/zh-CN/scripts/599835
+- **GitHub Releases / 源码**：https://github.com/saiyajiang/Web-Zh-CN-Patch
+
+需先安装 [Tampermonkey](https://www.tampermonkey.net/) 或 Violentmonkey。
+从 Greasyfork 安装可自动接收更新；从仓库 `dist/` 安装则走仓库更新地址。
+
 ## 支持站点
 
 | 站点 | 域名 | 词条 | 默认行为 |
 | --- | --- | --- | --- |
 | Greasy Fork / Sleazy Fork | `greasyfork.org` `sleazyfork.org` | 431 | 中文界面下开启，英文界面不干预 |
-| SteamDB | `steamdb.info` | 213 | 进站即翻译 |
+| SteamDB | `steamdb.info` | 231 | 进站即翻译 |
 
 未适配的域名脚本完全不运行。
 
@@ -19,7 +27,7 @@
 
 ## 功能
 
-- **词条替换**：644 条 UI 文案词典，按站点与界面分区组织
+- **词条替换**：662 条 UI 文案词典，按站点与界面分区组织
 - **正则补全**：`3 days ago` → `3 天前`、`1 of 10` → `1 / 10`、`1,234,567 players` → `1,234,567 名玩家`
 - **属性翻译**：`placeholder`、`title`、`aria-label`、`alt`、`data-confirm`，以及提交类按钮的 `value`
 - **动态内容**：MutationObserver 监听异步加载与局部刷新
@@ -37,9 +45,11 @@
 
 5. 站点用 `<br>` 折行时（`<th>Most Played<br>Games</th>`）会先把折行拼回整句再查词典，避免只译出前半截留下「最热玩 Games」这种半吊子。
 
-6. 数量与单位常被拆在不同元素里（`<span>564k</span> apps in database`），正则的数字部分设为可选，拆分和完整两种形态都能命中。
+6. 多句段落：整段匹配不中时按句再试（仅精确匹配，不用短语替换），避免「导出认为已覆盖、页面却原样不动」，例如首页横幅那段说明。
 
-7. 品牌名与第三方脚本名受保护：站点自有品牌用软保护（`SteamDB is not affiliated with...` 照常翻译，品牌名保留原文）；第三方脚本名用硬保护（`Greasy Fork+` 整段不动）。
+7. 数量与单位常被拆在不同元素里（`<span>564k</span> apps in database`），正则的数字部分设为可选，拆分和完整两种形态都能命中。
+
+8. 品牌名与第三方脚本名受保护：站点自有品牌用软保护（`SteamDB is not affiliated with...` 照常翻译，品牌名保留原文）；第三方脚本名用硬保护（`Greasy Fork+` 整段不动）。
 
 ## 菜单
 
@@ -112,8 +122,10 @@ npm run check   # 只做语法与词典校验
 
 ## 自动更新
 
-构建产物自带 `@downloadURL` 与 `@updateURL`（指向本仓库 `main` 分支的
-`dist/` 目录），Tampermonkey / Violentmonkey 可自动检测更新。
+构建产物的 `@downloadURL` 与 `@updateURL` 指向 **Greasyfork**（脚本 ID
+599835），Tampermonkey / Violentmonkey 可自动检测更新。选 Greasyfork
+而非 `raw.githubusercontent.com`，是因为后者在国内访问不稳定，会导致
+收不到更新推送。
 
 每次打开页面时控制台会打印一行：
 
@@ -124,8 +136,7 @@ npm run check   # 只做语法与词典校验
 **确认版本请先看这一行**——若显示的版本号低于仓库最新版，说明浏览器
 跑的还是旧脚本。可在脚本管理器里点「检查更新」，或手动重装。
 
-> 若改从 Greasyfork 安装，请把两条 URL 换成 Greasyfork 的地址：
-> `https://greasyfork.org/scripts/XXXXXX/code/...user.js` 与 `.../meta.js`
+
 
 ## 更彻底的做法
 

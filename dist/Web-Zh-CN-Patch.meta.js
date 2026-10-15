@@ -3,7 +3,7 @@
 // @name:zh-CN   Web 中文化补充
 // @name:en      Web Zh-CN Patch
 // @namespace    https://github.com/saiyajiang/Web-Zh-CN-Patch
-// @version      2.4.1
+// @version      2.5.0
 // @description  为多个英文站点补齐中文界面：目前支持 Greasy Fork（greasyfork.org / sleazyfork.org）、SteamDB（steamdb.info）。补全官方翻译中未收录、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 为多个英文站点补齐中文界面，补全官方翻译中未收录、漏翻的英文文案。本脚本由 AI 编写。
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.
@@ -16,8 +16,8 @@
 // @match        https://greasyfork.org/*
 // @match        https://sleazyfork.org/*
 // @match        https://steamdb.info/*
-// @downloadURL  https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.user.js
-// @updateURL    https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.meta.js
+// @downloadURL  https://greasyfork.org/scripts/599835-web-zh-cn-patch/code/Web%20%E4%B8%AD%E6%96%87%E5%8C%96%E8%A1%A5%E5%85%85.user.js
+// @updateURL    https://greasyfork.org/scripts/599835-web-zh-cn-patch/meta.js
 // @run-at       document-idle
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard

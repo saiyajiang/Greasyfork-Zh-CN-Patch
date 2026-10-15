@@ -183,6 +183,26 @@
       r = applyPhrases(t);
       if (r !== null) return r;
     }
+
+    /* 整段匹配不中时，按句再试一次。
+       导出环节本来就会按句拆分，替换却只看整段——于是出现「导出认为
+       已覆盖、页面上却原样不动」。只做精确匹配，不启用短语替换，
+       避免对长文本过度改动。 */
+    if (/[.!?]\s/.test(t) && t.length > 20) {
+      const parts = splitSentences(t);
+      if (parts.length > 1) {
+        let out = t;
+        let changed = false;
+        for (let i = 0; i < parts.length; i++) {
+          const one = lookupExact(parts[i]);
+          if (one !== null) {
+            out = out.replace(parts[i], one);
+            changed = true;
+          }
+        }
+        if (changed) return normalize(out);
+      }
+    }
     return null;
   }
 
@@ -388,8 +408,14 @@
   const PLACEHOLDER_RE = /^(?:[A-Z][a-z\d]+){2,}$/;
   /* 疑似用户名 / 仓库名：含数字、下划线、点或连字符的无空格小写词 */
   const IDENTIFIER_RE = /^[a-z][a-z\d._-]*[\d._-][a-z\d._-]*$/;
-  /* 被标签切断的残片：只认括号，句点与冒号都是正常句尾 */
-  const FRAGMENT_RE = /^\s*[\(\[]|[\)\]]$/;
+  /* 被标签切断的残片：括号不配对才算。'macOS (Apple Silicon)' 这种
+     自带配对括号的是完整 UI 标签，不能当残片丢掉。 */
+  function isFragment(t) {
+    const opens = (t.match(/[\(\[]/g) || []).length;
+    const closes = (t.match(/[\)\]]/g) || []).length;
+    if (opens !== closes) return true;
+    return /^[\)\]】]/.test(t.trim());
+  }
   /* 块级元素：不并入父级上下文 */
   const BLOCK_TAGS_RE = /^(?:P|DIV|LI|TD|TH|DT|DD|SECTION|ARTICLE|UL|OL|TABLE|TR|H[1-6]|BLOCKQUOTE|PRE|FIGURE|FORM|NAV|HEADER|FOOTER|ASIDE|MAIN|LABEL|BUTTON|FIELDSET|LEGEND|SUMMARY|OPTION|FIGCAPTION|CAPTION|ADDRESS)$/;
   /* 导航类容器：内部都是链接，合并成一条会失去语义，需逐个拆出 */
@@ -557,7 +583,9 @@
   /* 通用数据噪声：时间戳、数据库变更流水、署名等，各站点通用 */
   const TIMESTAMP_RE = /^\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2}/;
   const DBLOG_RE = /^\d{5,}\s+(?:New|Update|Delete)\b/;
-  const BYLINE_RE = /^By\s+[A-Za-z0-9]/;
+  /* 署名形如 'By Bethesda'、'By Plug In Digital,Dear Villagers'。
+     排除 'By default ...'、'By the ...' 这类普通句首。 */
+  const BYLINE_RE = /^By\s+(?!default\b|the\b|this\b|these\b|using\b|selecting\b|clicking\b|opening\b|adding\b|removing\b|comparing\b|only\b|not\b|now\b)\S/i;
   const ORDINAL_DATE_RE = /^(?:Ends|Starts|Until)\s+\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+/;
 
   function classify(t) {
@@ -568,7 +596,7 @@
     }
     if (SKIP_WORDS.has(t.toLowerCase())) return '专名/占位符（白名单）';
     if (PLACEHOLDER_RE.test(t)) return '占位符';
-    if (FRAGMENT_RE.test(t.trim())) return '句子残片（被标签切断）';
+    if (isFragment(t)) return '句子残片（被标签切断）';
     if (PURE_NOISE_RE.test(t)) return '纯 URL/路径';
     if (IDENTIFIER_RE.test(t)) return '疑似用户名/标识符';
     if (TIMESTAMP_RE.test(t)) return '时间戳';

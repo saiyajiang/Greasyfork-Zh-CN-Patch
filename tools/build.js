@@ -67,8 +67,8 @@ ${iconDataUri()}
 // @supportURL   https://github.com/saiyajiang/Web-Zh-CN-Patch/issues
 // @source       https://github.com/saiyajiang/Web-Zh-CN-Patch
 ${matchLines(sites)}
-// @downloadURL  https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.user.js
-// @updateURL    https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.meta.js
+// @downloadURL  https://greasyfork.org/scripts/599835-web-zh-cn-patch/code/Web%20%E4%B8%AD%E6%96%87%E5%8C%96%E8%A1%A5%E5%85%85.user.js
+// @updateURL    https://greasyfork.org/scripts/599835-web-zh-cn-patch/meta.js
 // @run-at       document-idle
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard

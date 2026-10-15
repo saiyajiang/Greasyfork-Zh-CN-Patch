@@ -3,7 +3,7 @@
 // @name:zh-CN   Web 中文化补充
 // @name:en      Web Zh-CN Patch
 // @namespace    https://github.com/saiyajiang/Web-Zh-CN-Patch
-// @version      2.4.1
+// @version      2.5.0
 // @description  为多个英文站点补齐中文界面：目前支持 Greasy Fork（greasyfork.org / sleazyfork.org）、SteamDB（steamdb.info）。补全官方翻译中未收录、漏翻的英文文案：导航、按钮、表单、表头、提示与确认弹窗等。本脚本由 AI 编写，译文仅供参考，欢迎反馈更地道的译法。
 // @description:zh-CN 为多个英文站点补齐中文界面，补全官方翻译中未收录、漏翻的英文文案。本脚本由 AI 编写。
 // @description:en  Fills in untranslated English UI strings on multiple sites. Written by AI.
@@ -16,8 +16,8 @@
 // @match        https://greasyfork.org/*
 // @match        https://sleazyfork.org/*
 // @match        https://steamdb.info/*
-// @downloadURL  https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.user.js
-// @updateURL    https://raw.githubusercontent.com/saiyajiang/Web-Zh-CN-Patch/main/dist/Web-Zh-CN-Patch.meta.js
+// @downloadURL  https://greasyfork.org/scripts/599835-web-zh-cn-patch/code/Web%20%E4%B8%AD%E6%96%87%E5%8C%96%E8%A1%A5%E5%85%85.user.js
+// @updateURL    https://greasyfork.org/scripts/599835-web-zh-cn-patch/meta.js
 // @run-at       document-idle
 // @grant        GM_registerMenuCommand
 // @grant        GM_setClipboard
@@ -232,6 +232,26 @@
       r = applyPhrases(t);
       if (r !== null) return r;
     }
+
+    /* 整段匹配不中时，按句再试一次。
+       导出环节本来就会按句拆分，替换却只看整段——于是出现「导出认为
+       已覆盖、页面上却原样不动」。只做精确匹配，不启用短语替换，
+       避免对长文本过度改动。 */
+    if (/[.!?]\s/.test(t) && t.length > 20) {
+      const parts = splitSentences(t);
+      if (parts.length > 1) {
+        let out = t;
+        let changed = false;
+        for (let i = 0; i < parts.length; i++) {
+          const one = lookupExact(parts[i]);
+          if (one !== null) {
+            out = out.replace(parts[i], one);
+            changed = true;
+          }
+        }
+        if (changed) return normalize(out);
+      }
+    }
     return null;
   }
 
@@ -437,8 +457,14 @@
   const PLACEHOLDER_RE = /^(?:[A-Z][a-z\d]+){2,}$/;
   /* 疑似用户名 / 仓库名：含数字、下划线、点或连字符的无空格小写词 */
   const IDENTIFIER_RE = /^[a-z][a-z\d._-]*[\d._-][a-z\d._-]*$/;
-  /* 被标签切断的残片：只认括号，句点与冒号都是正常句尾 */
-  const FRAGMENT_RE = /^\s*[\(\[]|[\)\]]$/;
+  /* 被标签切断的残片：括号不配对才算。'macOS (Apple Silicon)' 这种
+     自带配对括号的是完整 UI 标签，不能当残片丢掉。 */
+  function isFragment(t) {
+    const opens = (t.match(/[\(\[]/g) || []).length;
+    const closes = (t.match(/[\)\]]/g) || []).length;
+    if (opens !== closes) return true;
+    return /^[\)\]】]/.test(t.trim());
+  }
   /* 块级元素：不并入父级上下文 */
   const BLOCK_TAGS_RE = /^(?:P|DIV|LI|TD|TH|DT|DD|SECTION|ARTICLE|UL|OL|TABLE|TR|H[1-6]|BLOCKQUOTE|PRE|FIGURE|FORM|NAV|HEADER|FOOTER|ASIDE|MAIN|LABEL|BUTTON|FIELDSET|LEGEND|SUMMARY|OPTION|FIGCAPTION|CAPTION|ADDRESS)$/;
   /* 导航类容器：内部都是链接，合并成一条会失去语义，需逐个拆出 */
@@ -606,7 +632,9 @@
   /* 通用数据噪声：时间戳、数据库变更流水、署名等，各站点通用 */
   const TIMESTAMP_RE = /^\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2}/;
   const DBLOG_RE = /^\d{5,}\s+(?:New|Update|Delete)\b/;
-  const BYLINE_RE = /^By\s+[A-Za-z0-9]/;
+  /* 署名形如 'By Bethesda'、'By Plug In Digital,Dear Villagers'。
+     排除 'By default ...'、'By the ...' 这类普通句首。 */
+  const BYLINE_RE = /^By\s+(?!default\b|the\b|this\b|these\b|using\b|selecting\b|clicking\b|opening\b|adding\b|removing\b|comparing\b|only\b|not\b|now\b)\S/i;
   const ORDINAL_DATE_RE = /^(?:Ends|Starts|Until)\s+\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+/;
 
   function classify(t) {
@@ -617,7 +645,7 @@
     }
     if (SKIP_WORDS.has(t.toLowerCase())) return '专名/占位符（白名单）';
     if (PLACEHOLDER_RE.test(t)) return '占位符';
-    if (FRAGMENT_RE.test(t.trim())) return '句子残片（被标签切断）';
+    if (isFragment(t)) return '句子残片（被标签切断）';
     if (PURE_NOISE_RE.test(t)) return '纯 URL/路径';
     if (IDENTIFIER_RE.test(t)) return '疑似用户名/标识符';
     if (TIMESTAMP_RE.test(t)) return '时间戳';
@@ -1568,6 +1596,7 @@ registerSite({
     '含 SteamDB 的整句': [
       ['SteamDB is not affiliated with Valve or Steam.', 'SteamDB 与 Valve 或 Steam 没有隶属关系。'],
       ['SteamDB is a free, independent database covering the entire Steam catalog.', 'SteamDB 是一个免费、独立的数据库，涵盖 Steam 全部目录。'],
+      ['Player charts, price history across all regions, update histories, and detailed data for every product — kept current through fast, automatic updates.', '玩家图表、各地区价格历史、更新历史，以及每件商品的详细数据 —— 通过快速自动更新保持同步。'],
       ['Trending on SteamDB', 'SteamDB 热门趋势'],
       ['SteamDB in numbers', 'SteamDB 数据一览']
     ],
@@ -1609,6 +1638,27 @@ registerSite({
       ['Table is only showing games with 1K current players, or 10K peak.', '表格仅显示当前在线 1K 以上或峰值 10K 以上的游戏。'],
       ['Sign in to view full table, or search for a game in the navbar.', '登录后查看完整表格，或在顶部导航栏搜索游戏。'],
       ['High-resolution Steam charts', '高精度 Steam 图表']
+    ],
+
+    /* 首页横幅、筛选与榜单页：导出里以半中半英形式暴露的漏翻项 */
+    '说明与筛选': [
+      ['Previous Releases', '往期发售'],
+      ['Top Selling Games', '畅销游戏'],
+      ['Trending by Followers', '按关注数排序'],
+      ['Only numbers (with or without fractions)', '仅数字（可含小数）'],
+      ['Requires our browser extension to enable all filters (including showing all your DLC)', '需安装我们的浏览器扩展以启用全部筛选（包括显示全部 DLC）'],
+      ['By default DLCs, soundtracks, and videos are hidden from the table above.', '默认情况下，上表会隐藏 DLC、原声集与视频。'],
+      ['By default multiple inclusion filters use AND logic.', '默认情况下，多个包含筛选条件之间为「与」关系。'],
+      ['Green discount — Product is priced on par with all-time low', '绿色折扣 —— 价格与史低价格持平'],
+      ['Purple discount — Product is priced on par with all-time low in last two years', '紫色折扣 —— 价格与近两年史低价格持平'],
+      ['DLCs for owned games (sale)', '已拥有游戏的 DLC（特卖）'],
+      ['DLCs for owned games (all)', '已拥有游戏的 DLC（全部）'],
+      ['macOS (Apple Silicon)', 'macOS（Apple 芯片）'],
+      ['Cloud Gaming (NVIDIA)', '云游戏（NVIDIA）'],
+      ['DualShock (USB)', 'DualShock（USB）'],
+      ['DualSense (USB)', 'DualSense（USB）'],
+      ['Football (Soccer)', '足球（英式）'],
+      ['Football (American)', '橄榄球（美式）']
     ],
 
     '通用界面（待验证）': [
@@ -1760,10 +1810,10 @@ registerSite({
 
   const site = pickSite();
   if (!site) {
-    console.log('[Web 中文化补充] v2.4.1 当前站点未适配：' + location.hostname);
+    console.log('[Web 中文化补充] v2.5.0 当前站点未适配：' + location.hostname);
     return;
   }
-  console.log('%c[Web 中文化补充] v2.4.1 · ' + site.name, 'font-weight:bold');
+  console.log('%c[Web 中文化补充] v2.5.0 · ' + site.name, 'font-weight:bold');
   boot(site);
 
 })();

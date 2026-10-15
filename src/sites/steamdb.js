@@ -181,6 +181,7 @@ registerSite({
     '含 SteamDB 的整句': [
       ['SteamDB is not affiliated with Valve or Steam.', 'SteamDB 与 Valve 或 Steam 没有隶属关系。'],
       ['SteamDB is a free, independent database covering the entire Steam catalog.', 'SteamDB 是一个免费、独立的数据库，涵盖 Steam 全部目录。'],
+      ['Player charts, price history across all regions, update histories, and detailed data for every product — kept current through fast, automatic updates.', '玩家图表、各地区价格历史、更新历史，以及每件商品的详细数据 —— 通过快速自动更新保持同步。'],
       ['Trending on SteamDB', 'SteamDB 热门趋势'],
       ['SteamDB in numbers', 'SteamDB 数据一览']
     ],
@@ -222,6 +223,27 @@ registerSite({
       ['Table is only showing games with 1K current players, or 10K peak.', '表格仅显示当前在线 1K 以上或峰值 10K 以上的游戏。'],
       ['Sign in to view full table, or search for a game in the navbar.', '登录后查看完整表格，或在顶部导航栏搜索游戏。'],
       ['High-resolution Steam charts', '高精度 Steam 图表']
+    ],
+
+    /* 首页横幅、筛选与榜单页：导出里以半中半英形式暴露的漏翻项 */
+    '说明与筛选': [
+      ['Previous Releases', '往期发售'],
+      ['Top Selling Games', '畅销游戏'],
+      ['Trending by Followers', '按关注数排序'],
+      ['Only numbers (with or without fractions)', '仅数字（可含小数）'],
+      ['Requires our browser extension to enable all filters (including showing all your DLC)', '需安装我们的浏览器扩展以启用全部筛选（包括显示全部 DLC）'],
+      ['By default DLCs, soundtracks, and videos are hidden from the table above.', '默认情况下，上表会隐藏 DLC、原声集与视频。'],
+      ['By default multiple inclusion filters use AND logic.', '默认情况下，多个包含筛选条件之间为「与」关系。'],
+      ['Green discount — Product is priced on par with all-time low', '绿色折扣 —— 价格与史低价格持平'],
+      ['Purple discount — Product is priced on par with all-time low in last two years', '紫色折扣 —— 价格与近两年史低价格持平'],
+      ['DLCs for owned games (sale)', '已拥有游戏的 DLC（特卖）'],
+      ['DLCs for owned games (all)', '已拥有游戏的 DLC（全部）'],
+      ['macOS (Apple Silicon)', 'macOS（Apple 芯片）'],
+      ['Cloud Gaming (NVIDIA)', '云游戏（NVIDIA）'],
+      ['DualShock (USB)', 'DualShock（USB）'],
+      ['DualSense (USB)', 'DualSense（USB）'],
+      ['Football (Soccer)', '足球（英式）'],
+      ['Football (American)', '橄榄球（美式）']
     ],
 
     '通用界面（待验证）': [
